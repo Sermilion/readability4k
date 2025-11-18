@@ -1,12 +1,12 @@
 package com.sermilion.readability4k
 
+import com.sermilion.readability4k.model.ReadabilityOptions
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
-import com.sermilion.readability4k.model.ReadabilityOptions
 
 /**
  * Security tests for HTML injection and XSS attack vectors.

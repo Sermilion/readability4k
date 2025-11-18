@@ -167,10 +167,7 @@ open class ArticleGrabber(
 
       // Remove unlikely candidates
       if (options.stripUnlikelyCandidates) {
-        if (regEx.isUnlikelyCandidate(matchString) &&
-          regEx.okMaybeItsACandidate(matchString) == false &&
-          node.tagName() != "body" &&
-          node.tagName() != "a"
+        if (regEx.isUnlikelyCandidate(matchString) && !regEx.okMaybeItsACandidate(matchString) && node.tagName() != "body" && node.tagName() != "a"
         ) {
           node = this.removeAndGetNext(node, "Removing unlikely candidate")
           continue
@@ -217,7 +214,7 @@ open class ArticleGrabber(
         } else {
           // EXPERIMENTAL
           node.childNodes().forEach { childNode ->
-            if (childNode is TextNode && childNode.text().trim().length > 0) {
+            if (childNode is TextNode && childNode.text().trim().isNotEmpty()) {
               val p = doc.createElement("p")
               p.text(childNode.text())
               p.attr("style", "display: inline;")
@@ -306,10 +303,7 @@ open class ArticleGrabber(
 
   /*          Second step: Score elements             */
 
-  protected open fun scoreElements(
-    elementsToScore: List<Element>,
-    options: ArticleGrabberOptions,
-  ): List<Element> {
+  protected open fun scoreElements(elementsToScore: List<Element>, options: ArticleGrabberOptions): List<Element> {
     val candidates = ArrayList<Element>()
 
     elementsToScore.forEach { elementToScore ->
@@ -380,10 +374,7 @@ open class ArticleGrabber(
    * Initialize a node with the readability object. Also checks the
    * className/id for special names to add to its score.
    */
-  protected open fun initializeNode(
-    node: Element,
-    options: ArticleGrabberOptions,
-  ): ReadabilityObject {
+  protected open fun initializeNode(node: Element, options: ArticleGrabberOptions): ReadabilityObject {
     val readability = ReadabilityObject(0.0)
     readabilityObjects.put(node, readability)
 
@@ -677,11 +668,7 @@ open class ArticleGrabber(
   /*          Forth step: Create articleContent           */
 
   @Suppress("CyclomaticComplexMethod", "NestedBlockDepth", "LoopWithTooManyJumpStatements")
-  protected open fun createArticleContent(
-    doc: Document,
-    topCandidate: Element,
-    isPaging: Boolean,
-  ): Element {
+  protected open fun createArticleContent(doc: Document, topCandidate: Element, isPaging: Boolean): Element {
     val articleContent = doc.createElement("div")
     if (isPaging) {
       articleContent.attr("id", "readability-content")
@@ -765,11 +752,7 @@ open class ArticleGrabber(
    * iframes, forms, strip extraneous <p> tags, etc.
    */
   @Suppress("NestedBlockDepth")
-  protected open fun prepArticle(
-    articleContent: Element,
-    options: ArticleGrabberOptions,
-    metadata: ArticleMetadata,
-  ) {
+  protected open fun prepArticle(articleContent: Element, options: ArticleGrabberOptions, metadata: ArticleMetadata) {
     this.cleanStyles(articleContent)
 
     // Check for data tables before we continue, to avoid removing items in
@@ -963,11 +946,7 @@ open class ArticleGrabber(
   }
 
   @Suppress("CyclomaticComplexMethod")
-  protected open fun cleanConditionally(
-    e: Element,
-    tag: String,
-    options: ArticleGrabberOptions,
-  ) {
+  protected open fun cleanConditionally(e: Element, tag: String, options: ArticleGrabberOptions) {
     if (options.cleanConditionally == false) {
       return
     }
@@ -1069,8 +1048,7 @@ open class ArticleGrabber(
   /**
    * Get the number of times a string s appears in the node e.
    */
-  protected open fun getCharCount(node: Element, c: Char = ','): Int =
-    getInnerText(node, regEx).split(c).size - 1
+  protected open fun getCharCount(node: Element, c: Char = ','): Int = getInnerText(node, regEx).split(c).size - 1
 
   /**
    * Clean a node of all elements of type "tag".
@@ -1176,20 +1154,17 @@ open class ArticleGrabber(
     }
   }
 
-  protected open fun getReadabilityObject(element: Element): ReadabilityObject? =
-    readabilityObjects[element]
+  protected open fun getReadabilityObject(element: Element): ReadabilityObject? = readabilityObjects[element]
 
-  protected open fun getReadabilityDataTable(table: Element): Boolean =
-    this.readabilityDataTable[table] ?: false
+  protected open fun getReadabilityDataTable(table: Element): Boolean = this.readabilityDataTable[table] ?: false
 
   protected open fun setReadabilityDataTable(table: Element, readabilityDataTable: Boolean) {
     this.readabilityDataTable.put(table, readabilityDataTable)
   }
 
-  protected open fun shouldIncludeCandidate(candidate: Element): Boolean =
-    candidateFilters.all { filter ->
-      filter.shouldIncludeCandidate(candidate)
-    }
+  protected open fun shouldIncludeCandidate(candidate: Element): Boolean = candidateFilters.all { filter ->
+    filter.shouldIncludeCandidate(candidate)
+  }
 
   companion object {
     val DEFAULT_TAGS_TO_SCORE = listOf("section", "h2", "h3", "h4", "h5", "h6", "p", "td", "pre")

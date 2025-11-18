@@ -99,11 +99,9 @@ open class RegExUtil {
 
   open fun isNegative(matchString: String): Boolean = negative.containsMatchIn(matchString)
 
-  open fun isUnlikelyCandidate(matchString: String): Boolean =
-    unlikelyCandidates.containsMatchIn(matchString)
+  open fun isUnlikelyCandidate(matchString: String): Boolean = unlikelyCandidates.containsMatchIn(matchString)
 
-  open fun okMaybeItsACandidate(matchString: String): Boolean =
-    okMaybeItsACandidate.containsMatchIn(matchString)
+  open fun okMaybeItsACandidate(matchString: String): Boolean = okMaybeItsACandidate.containsMatchIn(matchString)
 
   open fun isByline(matchString: String): Boolean = byline.containsMatchIn(matchString)
 

@@ -34,11 +34,7 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
    * Converts each <a> and <img> uri in the given element to an absolute URI,
    * ignoring #ref URIs.
    */
-  protected open fun fixRelativeUris(
-    originalDocument: Document,
-    element: Element,
-    articleUri: String,
-  ) {
+  protected open fun fixRelativeUris(originalDocument: Document, element: Element, articleUri: String) {
     try {
       val parsed = parseUrl(articleUri)
       if (parsed != null) {
@@ -89,12 +85,7 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
     fixRelativeImageUris(element, scheme, prePath, pathBase)
   }
 
-  protected open fun fixRelativeAnchorUris(
-    element: Element,
-    scheme: String,
-    prePath: String,
-    pathBase: String,
-  ) {
+  protected open fun fixRelativeAnchorUris(element: Element, scheme: String, prePath: String, pathBase: String) {
     element.getElementsByTag("a").forEach { link ->
       val href = link.attr("href")
       if (href.isNotBlank()) {
@@ -110,23 +101,13 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
     }
   }
 
-  protected open fun fixRelativeImageUris(
-    element: Element,
-    scheme: String,
-    prePath: String,
-    pathBase: String,
-  ) {
+  protected open fun fixRelativeImageUris(element: Element, scheme: String, prePath: String, pathBase: String) {
     element.getElementsByTag("img").forEach { img ->
       fixRelativeImageUri(img, scheme, prePath, pathBase)
     }
   }
 
-  protected open fun fixRelativeImageUri(
-    img: Element,
-    scheme: String,
-    prePath: String,
-    pathBase: String,
-  ) {
+  protected open fun fixRelativeImageUri(img: Element, scheme: String, prePath: String, pathBase: String) {
     val src = img.attr("src")
 
     if (src.isNotBlank()) {
@@ -134,12 +115,7 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
     }
   }
 
-  protected open fun toAbsoluteURI(
-    uri: String,
-    scheme: String,
-    prePath: String,
-    pathBase: String,
-  ): String {
+  protected open fun toAbsoluteURI(uri: String, scheme: String, prePath: String, pathBase: String): String {
     // If this is already an absolute URI, return it.
     if (isAbsoluteUri(uri) || uri.length <= 2) {
       return uri

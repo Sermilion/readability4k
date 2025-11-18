@@ -60,10 +60,7 @@ open class Preprocessor(
       "This method is kept for backward compatibility.",
     replaceWith = ReplaceWith("noscriptHandler.shouldKeepNoscript(document, noscript)"),
   )
-  protected open fun shouldKeepImageInNoscriptElement(
-    document: Document,
-    noscript: Element,
-  ): Boolean {
+  protected open fun shouldKeepImageInNoscriptElement(document: Document, noscript: Element): Boolean {
     val images = noscript.select("img")
     if (images.size > 0) {
       val imagesToKeep = ArrayList(images)

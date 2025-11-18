@@ -15,6 +15,7 @@ composeMultiplatform = "1.9.1"
 detekt = "1.23.8"
 junit = "4.13.2"
 kotest = "5.9.1"
+spotless = "6.25.0"
 kotlin = "2.2.21"
 kotlinx-collectionsImmutable = "0.3.7"
 kotlinx-coroutines = "1.10.2"
@@ -26,6 +27,7 @@ logback = "1.5.20"
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 detekt-gradlePlugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+spotless-gradlePlugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
@@ -59,8 +61,10 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 readability4k-kmp-library = { id = "readability4k.kmp.library", version = "unspecified" }
 readability4k-kmp-compose = { id = "readability4k.kmp.compose", version = "unspecified" }
 readability4k-detekt = { id = "readability4k.detekt", version = "unspecified" }
+readability4k-spotless = { id = "readability4k.spotless", version = "unspecified" }

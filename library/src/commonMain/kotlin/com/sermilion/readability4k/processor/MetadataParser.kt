@@ -86,11 +86,7 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
     return curTitle
   }
 
-  private fun processTitleSeparators(
-    curTitle: String,
-    origTitle: String,
-    doc: Document,
-  ): Pair<String, Boolean> {
+  private fun processTitleSeparators(curTitle: String, origTitle: String, doc: Document): Pair<String, Boolean> {
     var processedTitle = curTitle
     var hadHierarchicalSeparators = false
 

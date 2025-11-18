@@ -7,8 +7,7 @@ fun interface CandidateFilter {
 }
 
 object BlockquoteDescendantFilter : CandidateFilter {
-  override fun shouldIncludeCandidate(candidate: Element): Boolean =
-    !hasAncestorTag(candidate, "blockquote")
+  override fun shouldIncludeCandidate(candidate: Element): Boolean = !hasAncestorTag(candidate, "blockquote")
 
   private fun hasAncestorTag(node: Element?, tag: String): Boolean {
     var currentNode = node

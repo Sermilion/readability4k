@@ -1,11 +1,11 @@
 package com.sermilion.readability4k
 
+import com.sermilion.readability4k.model.ReadabilityOptions
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import com.sermilion.readability4k.model.ReadabilityOptions
 
 class EdgeCaseTest :
   FunSpec(

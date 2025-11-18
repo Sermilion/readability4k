@@ -219,10 +219,7 @@ open class Readability4K {
     parse()
   }
 
-  protected open fun buildArticleMetadata(
-    metadata: ArticleMetadata,
-    articleContent: Element?,
-  ): ArticleMetadata {
+  protected open fun buildArticleMetadata(metadata: ArticleMetadata, articleContent: Element?): ArticleMetadata {
     val excerpt = if (metadata.excerpt.isNullOrBlank()) {
       articleContent?.getElementsByTag("p")?.first()?.text()?.trim()
     } else {

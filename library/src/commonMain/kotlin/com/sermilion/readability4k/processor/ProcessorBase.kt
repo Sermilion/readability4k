@@ -15,11 +15,7 @@ abstract class ProcessorBase(protected val logger: Logger = Logger.NONE) {
     protected const val TRUNCATE_LOG_OUTPUT = false
   }
 
-  protected open fun removeNodes(
-    element: Element,
-    tagName: String,
-    filterFunction: ((Element) -> Boolean)? = null,
-  ) {
+  protected open fun removeNodes(element: Element, tagName: String, filterFunction: ((Element) -> Boolean)? = null) {
     element.getElementsByTag(tagName).reversed().forEach { childElement ->
       if (childElement.parentNode() != null) {
         if (filterFunction == null || filterFunction(childElement)) {
@@ -47,11 +43,7 @@ abstract class ProcessorBase(protected val logger: Logger = Logger.NONE) {
     logger.debug("$reason [$nodeToString]")
   }
 
-  protected open fun replaceNodes(
-    parentElement: Element,
-    tagName: String,
-    newTagName: String,
-  ) {
+  protected open fun replaceNodes(parentElement: Element, tagName: String, newTagName: String) {
     parentElement.getElementsByTag(tagName).forEach { element ->
       element.tagName(newTagName)
     }
@@ -79,11 +71,7 @@ abstract class ProcessorBase(protected val logger: Logger = Logger.NONE) {
    * Get the inner text of a node - cross browser compatibly.
    * This also strips out any excess whitespace to be found.
    */
-  protected open fun getInnerText(
-    e: Element,
-    regEx: RegExUtil? = null,
-    normalizeSpaces: Boolean = true,
-  ): String {
+  protected open fun getInnerText(e: Element, regEx: RegExUtil? = null, normalizeSpaces: Boolean = true): String {
     val textContent = e.text().trim()
 
     if (normalizeSpaces && regEx != null) {

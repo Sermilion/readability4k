@@ -1,9 +1,9 @@
 package com.sermilion.readability4k
 
+import com.sermilion.readability4k.util.Logger
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import com.sermilion.readability4k.util.Logger
 import kotlinx.coroutines.test.runTest
 
 class WowheadTest :

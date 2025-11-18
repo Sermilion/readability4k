@@ -22,6 +22,7 @@ dependencies {
   compileOnly(libs.android.gradlePlugin)
   compileOnly(libs.kotlin.gradlePlugin)
   compileOnly(libs.detekt.gradlePlugin)
+  compileOnly(libs.spotless.gradlePlugin)
   implementation("org.jetbrains.compose:compose-gradle-plugin:1.9.3")
 }
 
@@ -37,6 +38,10 @@ gradlePlugin {
     register("detekt") {
       id = "readability4k.detekt"
       implementationClass = "DetektConventionPlugin"
+    }
+    register("spotless") {
+      id = "readability4k.spotless"
+      implementationClass = "SpotlessConventionPlugin"
     }
     register("kmpLibrary") {
       id = "readability4k.kmp.library"

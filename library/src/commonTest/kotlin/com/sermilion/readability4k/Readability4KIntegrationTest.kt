@@ -1,12 +1,12 @@
 package com.sermilion.readability4k
 
 import com.fleeksoft.ksoup.Ksoup
+import com.sermilion.readability4k.model.ReadabilityOptions
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import com.sermilion.readability4k.model.ReadabilityOptions
 
 class Readability4KIntegrationTest :
   FunSpec({
