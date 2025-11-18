@@ -8,7 +8,7 @@ import com.sermilion.readability4k.util.Logger
 open class Postprocessor(protected val logger: Logger = Logger.NONE) {
 
   companion object {
-    val AbsoluteUriPattern = Regex("^[a-zA-Z][a-zA-Z0-9\\+\\-\\.]*:")
+    val AbsoluteUriPattern = Regex("^[a-zA-Z][a-zA-Z0-9+\\-.]*:")
 
     val CLASSES_TO_PRESERVE = listOf("readability-styled", "page")
   }

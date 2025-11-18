@@ -116,6 +116,27 @@ class Readability4KIntegrationTest :
         article.charset shouldBe "UTF-8"
       }
 
+      test("should extract text direction from document") {
+        val html = """
+        <html dir="rtl">
+          <head>
+            <title>Article Title</title>
+          </head>
+          <body>
+            <article>
+              <p>Article content with sufficient text for extraction.</p>
+              <p>More content to meet word threshold.</p>
+            </article>
+          </body>
+        </html>
+        """.trimIndent()
+
+        val readability = Readability4K("https://example.com", html)
+        val article = readability.parse()
+
+        article.dir shouldBe "rtl"
+      }
+
       test("should handle OpenGraph metadata") {
         val html = """
         <html>

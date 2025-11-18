@@ -43,10 +43,7 @@ open class ArticleGrabber(
     logger.debug("**** grabArticle ****")
 
     val isPaging = pageElement != null
-    val page = pageElement ?: doc.body() ?: run {
-      logger.debug("No body found in document. Abort.")
-      return null
-    }
+    val page = pageElement ?: doc.body()
 
     val pageCacheHtml = doc.html()
 
@@ -263,7 +260,7 @@ open class ArticleGrabber(
 
   protected open fun isElementWithoutContent(node: Element): Boolean = node.text().isBlank() &&
     (
-      node.children().size == 0 ||
+      node.children().isEmpty() ||
         node.children().size == node.getElementsByTag("br").size + node.getElementsByTag("hr").size
       )
 
@@ -323,7 +320,7 @@ open class ArticleGrabber(
 
       // Exclude nodes with no ancestor.
       val ancestors = this.getNodeAncestors(elementToScore, 3)
-      if (ancestors.size == 0) {
+      if (ancestors.isEmpty()) {
         return@forEach
       }
 
@@ -339,11 +336,10 @@ open class ArticleGrabber(
       contentScore += minOf(floor(innerText.length / 100.0), 3.0)
 
       // Initialize and score ancestors.
-      for (level in 0..ancestors.size - 1) {
+      for (level in 0..<ancestors.size) {
         val ancestor = ancestors[level]
-        if (ancestor.tagName()
-            .isNullOrBlank()
-        ) { // with Jsoup this should never be true as we're only handling Elements
+        if (ancestor.tagName().isBlank()) {
+          // with Jsoup this should never be true as we're only handling Elements
           return@forEach
         }
 
@@ -525,7 +521,7 @@ open class ArticleGrabber(
       }
     }
 
-    var topCandidate = if (topCandidates.size > 0) topCandidates[0] else null
+    var topCandidate = if (topCandidates.isNotEmpty()) topCandidates[0] else null
     var parentOfTopCandidate: Element?
 
     // If we still have no top candidate, just use the body as a last resort.
@@ -538,7 +534,7 @@ open class ArticleGrabber(
       ArrayList(page.childNodes()).forEach { child ->
         logger.debug("Moving child out: $child")
         child.remove()
-        topCandidate?.appendChild(child)
+        topCandidate.appendChild(child)
       }
 
       page.appendChild(topCandidate)
@@ -639,8 +635,6 @@ open class ArticleGrabber(
         topCandidate = parentOfTopCandidate
         parentOfTopCandidate = topCandidate.parent()
       }
-
-      topCandidate = topCandidate!!
       if (getReadabilityObject(topCandidate) == null) {
         this.initializeNode(topCandidate, options)
       }
@@ -785,7 +779,7 @@ open class ArticleGrabber(
     val h2 = articleContent.getElementsByTag("h2")
     if (h2.size == 1) {
       metadata.title?.let { articleTitle ->
-        if (articleTitle.length > 0) {
+        if (articleTitle.isNotEmpty()) {
           val lengthSimilarRate =
             (h2[0].text().length - articleTitle.length) / articleTitle.length.toFloat()
           if (abs(lengthSimilarRate) < 0.5) {
@@ -830,7 +824,7 @@ open class ArticleGrabber(
         getInnerText(
           paragraph,
           normalizeSpaces = false,
-        ).length == 0
+        ).isEmpty()
     }
 
     articleContent.select("br").forEach { br ->
@@ -886,13 +880,13 @@ open class ArticleGrabber(
       }
 
       val caption = table.getElementsByTag("caption")
-      if (caption.size > 0 && caption[0].childNodeSize() > 0) {
+      if (caption.isNotEmpty() && caption[0].childNodeSize() > 0) {
         setReadabilityDataTable(table, true)
         return@outer
       }
 
       DATA_TABLE_DESCENDANTS.forEach { tag ->
-        if (table.getElementsByTag(tag).size > 0) {
+        if (table.getElementsByTag(tag).isNotEmpty()) {
           logger.debug("Data table because found data-y descendant")
           setReadabilityDataTable(table, true)
           return@outer
@@ -900,7 +894,7 @@ open class ArticleGrabber(
       }
 
       // Nested tables indicate a layout table:
-      if (table.getElementsByTag("table").size > 0) {
+      if (table.getElementsByTag("table").isNotEmpty()) {
         setReadabilityDataTable(table, false)
         return@outer
       }
@@ -928,7 +922,7 @@ open class ArticleGrabber(
       rows +=
         try {
           tr.attr("rowspan").toInt()
-        } catch (ignored: Exception) {
+        } catch (_: Exception) {
           1
         }
 
@@ -938,7 +932,7 @@ open class ArticleGrabber(
         columnsInThisRow +=
           try {
             cell.attr("colspan").toInt()
-          } catch (ignored: Exception) {
+          } catch (_: Exception) {
             1
           }
       }
@@ -1064,7 +1058,7 @@ open class ArticleGrabber(
     removeNodes(e, tag) { element ->
       // Allow youtube and vimeo videos through as people usually want to see those.
       if (isEmbed) {
-        val attributeValues = element.attributes().map { it.value }.joinToString("|")
+        val attributeValues = element.attributes().joinToString("|") { it.value }
 
         // First, check the elements attributes to see if any of them contain youtube or vimeo
         if (regEx.isVideo(attributeValues)) {
@@ -1125,7 +1119,7 @@ open class ArticleGrabber(
    */
   protected open fun getNextNode(node: Element, ignoreSelfAndKids: Boolean = false): Element? {
     // First check for kids if those aren't being ignored
-    if (!ignoreSelfAndKids && node.children().size > 0) {
+    if (!ignoreSelfAndKids && node.children().isNotEmpty()) {
       return node.child(0)
     }
 

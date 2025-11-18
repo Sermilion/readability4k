@@ -62,17 +62,17 @@ open class Preprocessor(
   )
   protected open fun shouldKeepImageInNoscriptElement(document: Document, noscript: Element): Boolean {
     val images = noscript.select("img")
-    if (images.size > 0) {
+    if (images.isNotEmpty()) {
       val imagesToKeep = ArrayList(images)
 
       images.forEach { image ->
         val source = image.attr("src")
-        if (source.isNotBlank() && document.select("img[src=$source]").size > 0) {
+        if (source.isNotBlank() && document.select("img[src=$source]").isNotEmpty()) {
           imagesToKeep.remove(image)
         }
       }
 
-      return imagesToKeep.size > 0
+      return imagesToKeep.isNotEmpty()
     }
 
     return false

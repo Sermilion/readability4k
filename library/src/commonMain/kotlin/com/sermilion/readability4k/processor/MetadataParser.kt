@@ -32,7 +32,7 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
 
       if (name != null) {
         val content = element.attr("content")
-        if (content.isNullOrBlank() == false) {
+        if (!content.isBlank()) {
           name = name.lowercase().replace("\\s".toRegex(), "")
           values[name] = content.trim().replace("  ", " ")
         }
@@ -50,7 +50,7 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
         ?: ""
     }
 
-    metadata.charset = document.charset()?.name()
+    metadata.charset = document.charset().name()
 
     return metadata
   }
@@ -69,7 +69,7 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
           curTitle = origTitle
         }
       }
-    } catch (@Suppress("SwallowedException") e: Exception) {
+    } catch (@Suppress("SwallowedException") _: Exception) {
       // Title extraction is not critical, continue with empty title if it fails
     }
 
@@ -93,18 +93,18 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
     if (curTitle.contains(" [|\\-/>»] ".toRegex())) {
       hadHierarchicalSeparators = curTitle.contains(" [/>»] ".toRegex())
       processedTitle =
-        origTitle.replace("(.*)[\\|\\-\\/>»] .*".toRegex(RegexOption.IGNORE_CASE), "$1")
+        origTitle.replace("(.*)[|\\-/>»] .*".toRegex(RegexOption.IGNORE_CASE), "$1")
 
       if (wordCount(processedTitle) < 3) {
         processedTitle = origTitle.replace(
-          "[^\\|\\-\\/>»]*[\\|\\-\\/>»](.*)".toRegex(RegexOption.IGNORE_CASE),
+          "[^|\\-/>»]*[|\\-/>»](.*)".toRegex(RegexOption.IGNORE_CASE),
           "$1",
         )
       }
     } else if (curTitle.contains(": ")) {
-      val match = doc.select("h1, h2").filter { it.wholeText() == curTitle }.size > 0
+      val match = doc.select("h1, h2").any { it.wholeText() == curTitle }
 
-      if (match == false) {
+      if (!match) {
         processedTitle = origTitle.substring(origTitle.lastIndexOf(':') + 1)
 
         if (wordCount(processedTitle) < 3) {
@@ -131,7 +131,7 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
   ): Boolean = curTitleWordCount <= 4 &&
     (
       !titleHadHierarchicalSeparators ||
-        curTitleWordCount != wordCount(origTitle.replace("[\\|\\-\\/>»]+".toRegex(), "")) - 1
+        curTitleWordCount != wordCount(origTitle.replace("[|\\-/>»]+".toRegex(), "")) - 1
       )
 
   protected open fun wordCount(str: String): Int = str.split("\\s+".toRegex()).size
