@@ -167,8 +167,12 @@ open class ArticleGrabber(
 
       // Remove unlikely candidates
       if (options.stripUnlikelyCandidates) {
-        if (regEx.isUnlikelyCandidate(matchString) && !regEx.okMaybeItsACandidate(matchString) && node.tagName() != "body" && node.tagName() != "a"
-        ) {
+        val isUnlikely = regEx.isUnlikelyCandidate(matchString) &&
+          !regEx.okMaybeItsACandidate(matchString) &&
+          node.tagName() != "body" &&
+          node.tagName() != "a"
+
+        if (isUnlikely) {
           node = this.removeAndGetNext(node, "Removing unlikely candidate")
           continue
         }
