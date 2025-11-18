@@ -21,17 +21,12 @@ internal fun Project.configureDetekt() {
     }
 
   configure<DetektExtension> {
-    //Check for module specific detekt config
     val moduleConfig = file("$projectDir/detekt.yml")
-    //If the module defines a specific detekt config, we attach it to the main configuration
     if (moduleConfig.exists()) {
-      config.setFrom("$rootDir/config/detekt/detekt.yml", moduleConfig)
+      config.setFrom(moduleConfig)
     }
-    baseline = file("$rootDir/config/detekt/detekt-baseline.xml")
     basePath = rootDir.absolutePath
     buildUponDefaultConfig = true
-    ignoredBuildTypes = listOf("release")
-    ignoredFlavors = listOf("production")
   }
 
   tasks.withType<Detekt>().configureEach {

@@ -10,8 +10,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
       with(pluginManager) {
         apply("com.android.library")
         apply("org.jetbrains.kotlin.multiplatform")
-        // TODO: Fix Detekt issues and re-enable
-        // apply("readability4k.detekt")
+        apply("readability4k.detekt")
       }
 
       extensions.configure<KotlinMultiplatformExtension> {

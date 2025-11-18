@@ -1,0 +1,67 @@
+build:
+  maxIssues: 0
+
+complexity:
+  LongParameterList:
+    active: true
+    constructorThreshold: 15  # DI constructors with defaults are acceptable
+    functionThreshold: 7
+  LongMethod:
+    active: true
+    threshold: 80
+  ComplexCondition:
+    active: true
+    threshold: 12  # Parsing logic can be very complex
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 40  # ArticleGrabber implements full readability algorithm
+  LargeClass:
+    active: true
+    threshold: 1500  # ArticleGrabber implements full algorithm
+
+style:
+  MagicNumber:
+    active: true
+    ignoreNumbers:
+      - '-1'
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+      - '6'
+      - '7'
+      - '8'
+      - '9'
+      - '10'
+      - '15'
+      - '25'
+      - '50'
+      - '80'
+      - '100'
+      - '140'
+      - '150'
+      - '200'
+      - '250'
+      - '500'
+      - '1000'
+      - '0.2'
+      - '0.25'
+      - '0.5'
+      - '0.75'
+    ignoreHashCodeFunction: true
+    ignorePropertyDeclaration: true
+    ignoreAnnotation: true
+    ignoreEnums: true
+    ignoreLocalVariableDeclaration: true
+    ignoreConstantDeclaration: true
+  ReturnCount:
+    active: true
+    max: 6  # URL parsing needs early returns
+  ForbiddenComment:
+    active: false  # Allow TODO/XXX in library code
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
