@@ -8,25 +8,26 @@ import com.sermilion.readability4k.model.ArticleGrabberOptions
 import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.model.ReadabilityObject
 import com.sermilion.readability4k.model.ReadabilityOptions
+import com.sermilion.readability4k.model.TopCandidateResult
 import com.sermilion.readability4k.util.HtmlUtil
 import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
 import kotlin.math.floor
 
-open class ArticleGrabber(
+open class ReadabilityArticleGrabber(
   options: ReadabilityOptions,
   protected val regEx: RegExUtil = RegExUtil(),
   logger: Logger = Logger.NONE,
   protected val candidateFilters: List<CandidateFilter> = listOf(BlockquoteDescendantFilter),
-) : ProcessorBase(logger) {
+) : ProcessorBase(logger), ArticleGrabber {
 
-  var articleByline: String? = null
+  override var articleByline: String? = null
     protected set
 
-  var articleDir: String? = null
+  override var articleDir: String? = null
     protected set
 
-  var articleLang: String? = null
+  override var articleLang: String? = null
     protected set
 
   protected val nbTopCandidates = options.nbTopCandidates
@@ -43,11 +44,11 @@ open class ArticleGrabber(
   }
 
   @Suppress("NestedBlockDepth")
-  open fun grabArticle(
+  override fun grabArticle(
     doc: Document,
     metadata: ArticleMetadata,
-    options: ArticleGrabberOptions = ArticleGrabberOptions(),
-    pageElement: Element? = null,
+    options: ArticleGrabberOptions,
+    pageElement: Element?,
   ): Element? {
     logger.debug("**** grabArticle ****")
 
@@ -56,105 +57,99 @@ open class ArticleGrabber(
 
     val pageCacheHtml = doc.html()
 
-    while (true) {
-      // First, node prepping. Trash nodes that look cruddy (like ones with the
-      // class name "comment", etc), and turn divs into P tags where they have been
-      // used inappropriately (as in, where they contain no other block level elements.)
-      val elementsToScore = prepareNodes(doc, options)
+    val optionsSequence = generateOptionsSequence(options)
+    val attempts = ArrayList<Triple<Element, Element, Int>>()
 
-      /**
-       * Loop through all paragraphs, and assign a score to them based on how content-y they look.
-       * Then add their score to their parent node.
-       *
-       * A score is determined by things like number of commas, class names, etc. Maybe eventually
-       * link density.
-       **/
-      val candidates = scoreElements(elementsToScore, options)
+    for (currentOptions in optionsSequence) {
+      page.html(pageCacheHtml)
 
-      // After we've calculated scores, loop through all of the possible
-      // candidate nodes we found and find the one with the highest score.
-      val topCandidateResult = getTopCandidate(page, candidates, options)
-      val topCandidate = topCandidateResult.first
-      val neededToCreateTopCandidate = topCandidateResult.second
+      val result = tryExtractArticle(doc, metadata, currentOptions, page, isPaging)
 
-      // Now that we have the top candidate, look through its siblings for content
-      // that might also be related. Things like preambles, content split by ads
-      // that we removed, etc.
-      var articleContent = createArticleContent(doc, topCandidate, isPaging)
+      val textLength = getInnerText(result.articleContent, regEx, true).length
+      attempts.add(Triple(result.articleContent, result.topCandidate, textLength))
 
-      logger.debug("Article content pre-prep: ${articleContent.html()}")
-      prepArticle(articleContent, options, metadata)
-      logger.debug("Article content post-prep: ${articleContent.html()}")
-
-      if (neededToCreateTopCandidate) {
-        // We already created a fake div thing, and there wouldn't have been any siblings left
-        // for the previous loop, so there's no point trying to create a new div, and then
-        // move all the children over. Just assign IDs and class names here. No need to append
-        // because that already happened anyway.
-        topCandidate.attr("id", "readability-page-1")
-        topCandidate.addClass("page")
-      } else {
-        val div = doc.createElement("div")
-        div.attr("id", "readability-page-1")
-        div.addClass("page")
-
-        ArrayList(articleContent.childNodes()).forEach { child ->
-          child.remove()
-          div.appendChild(child)
-        }
-
-        articleContent.appendChild(div)
-      }
-
-      logger.debug("Article content after paging: ${articleContent.html()}")
-
-      var parseSuccessful = true
-      val attempts = ArrayList<Pair<Element, Int>>()
-
-      // Now that we've gone through the full algorithm, check to see if
-      // we got any meaningful content. If we didn't, we may need to re-run
-      // grabArticle with different flags set. This gives us a higher likelihood of
-      // finding the content, and the sieve approach gives us a higher likelihood of
-      // finding the -right- content.
-      val textLength = getInnerText(articleContent, regEx, true).length
-      if (textLength < this.charThreshold) {
-        parseSuccessful = false
-        page.html(pageCacheHtml)
-
-        if (options.stripUnlikelyCandidates) {
-          options.stripUnlikelyCandidates = false
-          attempts.add(Pair(articleContent, textLength))
-        } else if (options.weightClasses) {
-          options.weightClasses = false
-          attempts.add(Pair(articleContent, textLength))
-        } else if (options.cleanConditionally) {
-          options.cleanConditionally = false
-          attempts.add(Pair(articleContent, textLength))
-        } else {
-          attempts.add(Pair(articleContent, textLength))
-          // No luck after removing flags, just return the longest text we found during the
-          // different loops
-          attempts.sortBy { it.second }
-
-          // But first check if we actually have something
-          if (attempts.isEmpty() || attempts[0].second <= 0) {
-            return null
-          }
-
-          articleContent = attempts[0].first
-          parseSuccessful = true
-        }
-      }
-
-      if (parseSuccessful) {
-        // Find out text direction from ancestors of final top candidate.
-        getTextDirection(topCandidate, doc)
-
+      if (textLength >= this.charThreshold) {
+        getTextDirection(result.topCandidate, doc)
         getLanguage(doc)
-
-        return articleContent
+        return result.articleContent
       }
     }
+
+    attempts.sortByDescending { it.third }
+    return if (attempts.isNotEmpty() && attempts[0].third > 0) {
+      getTextDirection(attempts[0].second, doc)
+      getLanguage(doc)
+      attempts[0].first
+    } else {
+      null
+    }
+  }
+
+  private fun generateOptionsSequence(options: ArticleGrabberOptions): List<ArticleGrabberOptions> {
+    val sequence = mutableListOf(options)
+
+    if (options.stripUnlikelyCandidates) {
+      sequence.add(options.copy(stripUnlikelyCandidates = false))
+    }
+    if (options.weightClasses) {
+      sequence.add(options.copy(stripUnlikelyCandidates = false, weightClasses = false))
+    }
+    if (options.cleanConditionally) {
+      sequence.add(
+        options.copy(
+          stripUnlikelyCandidates = false,
+          weightClasses = false,
+          cleanConditionally = false,
+        ),
+      )
+    }
+
+    return sequence
+  }
+
+  private data class ExtractionResult(
+    val articleContent: Element,
+    val topCandidate: Element,
+  )
+
+  private fun tryExtractArticle(
+    doc: Document,
+    metadata: ArticleMetadata,
+    options: ArticleGrabberOptions,
+    page: Element,
+    isPaging: Boolean,
+  ): ExtractionResult {
+    val elementsToScore = prepareNodes(doc, options)
+    val candidates = scoreElements(elementsToScore, options)
+    val topCandidateResult = getTopCandidate(page, candidates, options)
+    val topCandidate = topCandidateResult.candidate
+    val neededToCreateTopCandidate = topCandidateResult.wasCreated
+
+    val articleContent = createArticleContent(doc, topCandidate, isPaging)
+
+    logger.debug("Article content pre-prep: ${articleContent.html()}")
+    prepArticle(articleContent, options, metadata)
+    logger.debug("Article content post-prep: ${articleContent.html()}")
+
+    if (neededToCreateTopCandidate) {
+      topCandidate.attr("id", "readability-page-1")
+      topCandidate.addClass("page")
+    } else {
+      val div = doc.createElement("div")
+      div.attr("id", "readability-page-1")
+      div.addClass("page")
+
+      ArrayList(articleContent.childNodes()).forEach { child ->
+        child.remove()
+        div.appendChild(child)
+      }
+
+      articleContent.appendChild(div)
+    }
+
+    logger.debug("Article content after paging: ${articleContent.html()}")
+
+    return ExtractionResult(articleContent, topCandidate)
   }
 
   /*             First step: prepare nodes           */
@@ -492,7 +487,7 @@ open class ArticleGrabber(
     page: Element,
     candidates: List<Element>,
     options: ArticleGrabberOptions,
-  ): Pair<Element, Boolean> {
+  ): TopCandidateResult {
     val topCandidates = ArrayList<Element>()
 
     candidates.forEach { candidate ->
@@ -552,7 +547,7 @@ open class ArticleGrabber(
 
       this.initializeNode(topCandidate, options)
 
-      return Pair(topCandidate, true)
+      return TopCandidateResult(topCandidate, true)
     } else {
       // Find a better top candidate node if it contains (at least three) nodes which belong to
       // `topCandidates` array
@@ -577,7 +572,7 @@ open class ArticleGrabber(
       if (alternativeCandidateAncestors.size >= minimumTopCandidates) {
         parentOfTopCandidate = topCandidate.parent()
 
-        while (parentOfTopCandidate != null && parentOfTopCandidate.tagName() !== "body") {
+        while (parentOfTopCandidate != null && parentOfTopCandidate.tagName() != "body") {
           var listsContainingThisAncestor = 0
           var ancestorIndex = 0
           while (ancestorIndex < alternativeCandidateAncestors.size &&
@@ -650,7 +645,7 @@ open class ArticleGrabber(
         this.initializeNode(topCandidate, options)
       }
 
-      return Pair(topCandidate, false)
+      return TopCandidateResult(topCandidate, false)
     }
   }
 
@@ -712,7 +707,7 @@ open class ArticleGrabber(
         var contentBonus = 0.0
 
         // Give a bonus if sibling nodes and top candidates have the example same classname
-        if (sibling.className() == topCandidate.className() && topCandidate.className() !== "") {
+        if (sibling.className() == topCandidate.className() && topCandidate.className() != "") {
           contentBonus += topCandidateReadability.contentScore * 0.2
         }
 
@@ -839,7 +834,7 @@ open class ArticleGrabber(
       return
     }
 
-    if (e.className() !== "readability-styled") {
+    if (e.className() != "readability-styled") {
       // Remove `style` and deprecated presentational attributes
       PRESENTATIONAL_ATTRIBUTES.forEach { attributeName ->
         e.removeAttr(attributeName)

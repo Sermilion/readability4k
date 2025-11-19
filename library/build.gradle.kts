@@ -39,6 +39,7 @@ kotlin {
 
         jvmTest.dependencies {
             implementation(libs.kotest.runner.junit5.jvm)
+            implementation(libs.mockk)
         }
     }
 }
@@ -62,7 +63,7 @@ tasks.named<Test>("jvmTest") {
 }
 
 group = "com.sermilion"
-version = "0.1.0"
+version = "0.1.2"
 
 publishing {
     repositories {

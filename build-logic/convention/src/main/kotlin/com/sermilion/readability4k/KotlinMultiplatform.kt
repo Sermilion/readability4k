@@ -10,9 +10,15 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-internal fun Project.configureKotlinMultiplatform(
-  extension: KotlinMultiplatformExtension
-) {
+private val kmpCompilerArgs = listOf(
+  "-opt-in=kotlin.RequiresOptIn",
+  "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+  "-opt-in=kotlinx.coroutines.FlowPreview",
+  "-opt-in=kotlin.ExperimentalMultiplatform",
+  "-Xexpect-actual-classes",
+)
+
+private fun Project.configureAndroidLibrary() {
   extensions.configure<LibraryExtension> {
     compileSdk = findVersion("compileSdk").toInt()
     defaultConfig {
@@ -23,37 +29,39 @@ internal fun Project.configureKotlinMultiplatform(
       targetCompatibility = JavaVersion.VERSION_11
     }
   }
+}
 
-  extension.apply {
-    compilerOptions {
-      freeCompilerArgs.addAll(
-        listOf(
-          "-opt-in=kotlin.RequiresOptIn",
-          "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-          "-opt-in=kotlinx.coroutines.FlowPreview",
-          "-opt-in=kotlin.ExperimentalMultiplatform",
-          "-Xexpect-actual-classes",
-        )
-      )
-    }
+private fun KotlinMultiplatformExtension.configureKmpTargets() {
+  compilerOptions {
+    freeCompilerArgs.addAll(kmpCompilerArgs)
+  }
 
-    androidTarget {
-      compilations.all {
-        compileTaskProvider.configure {
-          compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-          }
+  androidTarget {
+    compilations.all {
+      compileTaskProvider.configure {
+        compilerOptions {
+          jvmTarget.set(JvmTarget.JVM_11)
         }
       }
     }
+  }
 
-    jvm()
+  jvm()
 
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+  iosX64()
+  iosArm64()
+  iosSimulatorArm64()
 
-    applyDefaultHierarchyTemplate()
+  applyDefaultHierarchyTemplate()
+}
+
+internal fun Project.configureKotlinMultiplatform(
+  extension: KotlinMultiplatformExtension
+) {
+  configureAndroidLibrary()
+
+  extension.apply {
+    configureKmpTargets()
 
     sourceSets.apply {
       commonMain {
@@ -74,47 +82,10 @@ internal fun Project.configureKotlinMultiplatform(
 internal fun Project.configureKotlinMultiplatformCompose(
   extension: KotlinMultiplatformExtension
 ) {
-  extensions.configure<LibraryExtension> {
-    compileSdk = findVersion("compileSdk").toInt()
-    defaultConfig {
-      minSdk = findVersion("minSdk").toInt()
-    }
-    compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_11
-      targetCompatibility = JavaVersion.VERSION_11
-    }
-  }
+  configureAndroidLibrary()
 
   extension.apply {
-    compilerOptions {
-      freeCompilerArgs.addAll(
-        listOf(
-          "-opt-in=kotlin.RequiresOptIn",
-          "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-          "-opt-in=kotlinx.coroutines.FlowPreview",
-          "-opt-in=kotlin.ExperimentalMultiplatform",
-          "-Xexpect-actual-classes",
-        )
-      )
-    }
-
-    androidTarget {
-      compilations.all {
-        compileTaskProvider.configure {
-          compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-          }
-        }
-      }
-    }
-
-    jvm()
-
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-
-    applyDefaultHierarchyTemplate()
+    configureKmpTargets()
 
     sourceSets.apply {
       commonMain {

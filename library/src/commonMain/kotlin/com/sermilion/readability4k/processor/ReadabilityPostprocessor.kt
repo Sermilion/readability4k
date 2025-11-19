@@ -5,7 +5,7 @@ import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.TextNode
 import com.sermilion.readability4k.util.Logger
 
-open class Postprocessor(protected val logger: Logger = Logger.NONE) {
+open class ReadabilityPostprocessor(protected val logger: Logger = Logger.NONE) : Postprocessor {
 
   companion object {
     val AbsoluteUriPattern = Regex("^[a-zA-Z][a-zA-Z0-9+\\-.]*:")
@@ -13,12 +13,12 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
     val CLASSES_TO_PRESERVE = listOf("readability-styled", "page")
   }
 
-  open fun postProcessContent(
+  override fun postProcessContent(
     originalDocument: Document,
     articleContent: Element,
     articleUri: String,
-    additionalClassesToPreserve: Collection<String> = emptyList(),
-    keepClasses: Boolean = false,
+    additionalClassesToPreserve: Collection<String>,
+    keepClasses: Boolean,
   ) {
     // Readability cannot open relative uris so we convert them to absolute uris.
     fixRelativeUris(originalDocument, articleContent, articleUri)

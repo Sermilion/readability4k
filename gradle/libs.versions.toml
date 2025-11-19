@@ -15,6 +15,7 @@ composeMultiplatform = "1.9.3"
 detekt = "1.23.8"
 junit = "4.13.2"
 kotest = "5.9.1"
+mockk = "1.13.13"
 spotless = "7.0.2"
 kotlin = "2.2.21"
 kotlinx-collectionsImmutable = "0.3.7"
@@ -44,6 +45,7 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlinx-collectionsImmutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collectionsImmutable" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }

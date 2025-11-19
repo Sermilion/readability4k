@@ -32,7 +32,7 @@ open class Article(
   val lang: String? = null,
   val siteName: String? = null,
   val publishedTime: String? = null,
-  val serializer: ((Element) -> String)? = null,
+  private val serializedContent: String? = null,
 ) {
 
   /**
@@ -42,13 +42,10 @@ open class Article(
    * UTF-8 encoding, see [contentWithUtf8Encoding]. For more details, see
    * [https://github.com/dankito/Readability4J/issues/1].
    *
-   * If a custom serializer is provided via options, it will be used instead
-   * of the default Element.html() method.
+   * If a custom serializer was provided via options, it was applied during parsing.
    */
   val content: String?
-    get() = articleContent?.let { element ->
-      serializer?.invoke(element) ?: element.html()
-    }
+    get() = serializedContent ?: articleContent?.html()
 
   /**
    * Content with explicit UTF-8 encoding.
