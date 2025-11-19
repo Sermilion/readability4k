@@ -12,9 +12,9 @@ application {
 
 dependencies {
   implementation(project(":library"))
-  implementation("io.ktor:ktor-client-core:3.0.3")
-  implementation("io.ktor:ktor-client-cio:3.0.3")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+  implementation(libs.ktor.clientCore)
+  implementation(libs.ktor.clientCio)
+  implementation(libs.kotlinx.coroutines.core)
 }
 
 tasks.named<JavaExec>("run") {
