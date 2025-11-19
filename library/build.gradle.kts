@@ -13,6 +13,30 @@ kotlin {
         }
     }
 
+    jvm {
+        mavenPublication {
+            artifactId = "readability4k-jvm"
+        }
+    }
+
+    iosArm64 {
+        mavenPublication {
+            artifactId = "readability4k-iosarm64"
+        }
+    }
+
+    iosSimulatorArm64 {
+        mavenPublication {
+            artifactId = "readability4k-iossimulatorarm64"
+        }
+    }
+
+    iosX64 {
+        mavenPublication {
+            artifactId = "readability4k-iosx64"
+        }
+    }
+
     sourceSets.all {
         languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
         languageSettings.optIn("kotlinx.coroutines.FlowPreview")
@@ -63,22 +87,15 @@ tasks.named<Test>("jvmTest") {
 }
 
 group = "com.sermilion"
-version = "0.1.2"
+version = "0.1.3"
 
 publishing {
     repositories {
         mavenLocal()
     }
     publications.withType<MavenPublication> {
-        artifactId =
-            when (name) {
-                "kotlinMultiplatform" -> "readability4k"
-                "androidRelease" -> "readability4k-android"
-                "jvm" -> "readability4k-jvm"
-                "iosArm64" -> "readability4k-iosarm64"
-                "iosSimulatorArm64" -> "readability4k-iossimulatorarm64"
-                "iosX64" -> "readability4k-iosx64"
-                else -> artifactId
-            }
+        if (name == "kotlinMultiplatform") {
+            artifactId = "readability4k"
+        }
     }
 }
