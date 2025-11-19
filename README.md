@@ -147,6 +147,64 @@ The `Article` class provides:
 - `length: Int` - Article length in characters
 - `articleContent: Element?` - Ksoup Element for advanced manipulation
 
+## Command-Line Tool
+
+Readability4K includes a CLI tool for testing and extracting articles from URLs.
+
+### Quick Start
+
+```bash
+# Extract article from URL
+./gradlew :cli:run --args="https://example.com/article"
+
+# Or use the convenience script
+./readability4k-cli.sh https://example.com/article
+```
+
+### Output Formats
+
+```bash
+# HTML content (default)
+./readability4k-cli.sh https://example.com/article html
+
+# Plain text
+./readability4k-cli.sh https://example.com/article text
+
+# JSON format
+./readability4k-cli.sh https://example.com/article json
+
+# Metadata only
+./readability4k-cli.sh https://example.com/article metadata
+
+# Everything
+./readability4k-cli.sh https://example.com/article all
+```
+
+### Save to File
+
+```bash
+# Save HTML
+./readability4k-cli.sh https://example.com/article html > output.html
+
+# Save text
+./readability4k-cli.sh https://example.com/article text > output.txt
+
+# Save JSON
+./readability4k-cli.sh https://example.com/article json > output.json
+```
+
+### Installation
+
+For easier usage, install the CLI tool:
+
+```bash
+./gradlew :cli:installDist
+export PATH="$PATH:$(pwd)/cli/build/install/cli/bin"
+cli https://example.com/article
+```
+
+See [cli/README.md](cli/README.md) for complete CLI documentation.
+
 ## Architecture
 
 Readability4K follows clean architecture principles:

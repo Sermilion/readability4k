@@ -1,8 +1,20 @@
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     alias(libs.plugins.readability4k.kmp.library)
+    `maven-publish`
 }
 
 kotlin {
+    androidTarget {
+        publishLibraryVariants("release", "debug")
+        publishLibraryVariantsGroupedByFlavor = true
+
+        mavenPublication {
+            artifactId = "readability4k-android"
+        }
+    }
+
     sourceSets.all {
         languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
         languageSettings.optIn("kotlinx.coroutines.FlowPreview")
@@ -49,4 +61,23 @@ android {
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
+}
+
+group = "com.sermilion"
+version = "1.0.0"
+
+publishing {
+  repositories {
+    mavenLocal()
+  }
+  publications.withType<MavenPublication> {
+    artifactId = when (name) {
+      "kotlinMultiplatform" -> "readability4k"
+      "jvm" -> "readability4k-jvm"
+      "iosArm64" -> "readability4k-iosarm64"
+      "iosSimulatorArm64" -> "readability4k-iossimulatorarm64"
+      "iosX64" -> "readability4k-iosx64"
+      else -> artifactId
+    }
+  }
 }

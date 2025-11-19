@@ -37,4 +37,4 @@ plugins {
 }
 
 include(":library")
-include(":sample")
+include(":cli")
