@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.sermilion"
-version = "1.0.0"
+version = "0.1.0"
 
 application {
   mainClass.set("com.sermilion.readability4k.cli.MainKt")

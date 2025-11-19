@@ -17,20 +17,20 @@ From the Readability4K project directory:
 This will:
 - Build all variants (Android, JVM, iOS)
 - Create Maven artifacts
-- Publish to `~/.m2/repository/com/sermilion/readability4k-android/1.0.0/`
+- Publish to `~/.m2/repository/com/sermilion/readability4k-android/0.1.0/`
 
 ### Step 2: Verify Publication
 
 Check that the library was published:
 
 ```bash
-ls ~/.m2/repository/com/sermilion/readability4k-android/1.0.0/
+ls ~/.m2/repository/com/sermilion/readability4k-android/0.1.0/
 ```
 
 You should see files like:
-- `readability4k-android-1.0.0.aar`
-- `readability4k-android-1.0.0.pom`
-- `readability4k-android-1.0.0-sources.jar`
+- `readability4k-android-0.1.0.aar`
+- `readability4k-android-0.1.0.pom`
+- `readability4k-android-0.1.0-sources.jar`
 
 ---
 
@@ -70,7 +70,7 @@ allprojects {
 ```kotlin
 dependencies {
     // Simple! Works for Android, JVM, iOS - Gradle auto-resolves the correct variant
-    implementation("com.sermilion:readability4k:1.0.0")
+    implementation("com.sermilion:readability4k:0.1.0")
 }
 ```
 
@@ -78,7 +78,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'com.sermilion:readability4k:1.0.0'
+    implementation 'com.sermilion:readability4k:0.1.0'
 }
 ```
 
@@ -240,13 +240,13 @@ After publishing, Gradle creates these platform-specific artifacts automatically
 | `readability4k-iossimulatorarm64` | iOS Simulator (M1+) | Auto-resolved by Gradle |
 | `readability4k-iosx64` | iOS Simulator (Intel) | Auto-resolved by Gradle |
 
-**Just use:** `implementation("com.sermilion:readability4k:1.0.0")` and Gradle does the rest!
+**Just use:** `implementation("com.sermilion:readability4k:0.1.0")` and Gradle does the rest!
 
 ---
 
 ## Troubleshooting
 
-### "Could not find com.sermilion:readability4k-android:1.0.0"
+### "Could not find com.sermilion:readability4k-android:0.1.0"
 
 **Solution:**
 1. Make sure you ran `./gradlew publishToMavenLocal`
@@ -329,10 +329,10 @@ dependencies {
 ./gradlew clean publishToMavenLocal
 
 # Check published files
-ls ~/.m2/repository/com/sermilion/readability4k/1.0.0/
+ls ~/.m2/repository/com/sermilion/readability4k/0.1.0/
 
 # In your Android/iOS/JVM project - just use the common artifact!
-implementation("com.sermilion:readability4k:1.0.0")
+implementation("com.sermilion:readability4k:0.1.0")
 ```
 
 ---
@@ -341,7 +341,7 @@ implementation("com.sermilion:readability4k:1.0.0")
 
 | Version | Changes |
 |---------|---------|
-| 1.0.0 | Initial release with 100% Mozilla Readability API parity |
+| 0.1.0 | Initial release with 100% Mozilla Readability API parity |
 
 ---
 
