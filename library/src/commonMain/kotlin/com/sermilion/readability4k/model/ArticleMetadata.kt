@@ -1,12 +1,12 @@
 package com.sermilion.readability4k.model
 
-open class ArticleMetadata(
-  var title: String? = null,
-  var byline: String? = null,
-  var excerpt: String? = null,
-  var dir: String? = null,
-  var charset: String? = null,
-  var lang: String? = null,
-  var siteName: String? = null,
-  var publishedTime: String? = null,
+data class ArticleMetadata(
+  val title: String? = null,
+  val byline: String? = null,
+  val excerpt: String? = null,
+  val dir: String? = null,
+  val charset: String? = null,
+  val lang: String? = null,
+  val siteName: String? = null,
+  val publishedTime: String? = null,
 )

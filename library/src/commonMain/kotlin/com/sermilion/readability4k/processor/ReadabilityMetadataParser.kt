@@ -5,12 +5,13 @@ import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.util.HtmlUtil
 import com.sermilion.readability4k.util.RegExUtil
 
-open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : ProcessorBase() {
+open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil()) : ProcessorBase(), MetadataParser {
 
   @Suppress("CyclomaticComplexMethod")
-  open fun getArticleMetadata(document: Document, disableJSONLD: Boolean = false): ArticleMetadata {
-    val metadata = ArticleMetadata()
+  override fun getArticleMetadata(document: Document, disableJSONLD: Boolean): ArticleMetadata {
     val values = HashMap<String, String>()
+    var byline: String? = null
+    var publishedTime: String? = null
 
     val namePattern =
       Regex("^\\s*((twitter)\\s*:\\s*)?(description|title)\\s*$", RegexOption.IGNORE_CASE)
@@ -21,12 +22,12 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
       val elementProperty = element.attr("property")
 
       if (elementName == "author" || elementProperty == "author") {
-        metadata.byline = element.attr("content")
+        byline = element.attr("content")
         return@forEach
       }
 
       if (elementProperty == "article:published_time" || elementName == "parsely-pub-date") {
-        metadata.publishedTime = element.attr("content")
+        publishedTime = element.attr("content")
         return@forEach
       }
 
@@ -46,53 +47,52 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
       }
     }
 
+    var title: String? = null
+    var excerpt: String? = null
+    var siteName: String? = null
+
     if (!disableJSONLD) {
       val jsonLd = getJSONLD(document)
       if (jsonLd != null) {
         if (!jsonLd.title.isNullOrBlank()) {
-          metadata.title = jsonLd.title
+          title = jsonLd.title
         }
-        if (!jsonLd.byline.isNullOrBlank() && metadata.byline.isNullOrBlank()) {
-          metadata.byline = jsonLd.byline
+        if (!jsonLd.byline.isNullOrBlank() && byline.isNullOrBlank()) {
+          byline = jsonLd.byline
         }
         if (!jsonLd.excerpt.isNullOrBlank()) {
-          metadata.excerpt = jsonLd.excerpt
+          excerpt = jsonLd.excerpt
         }
         if (!jsonLd.siteName.isNullOrBlank()) {
-          metadata.siteName = jsonLd.siteName
+          siteName = jsonLd.siteName
         }
-        if (!jsonLd.publishedTime.isNullOrBlank() && metadata.publishedTime.isNullOrBlank()) {
-          metadata.publishedTime = jsonLd.publishedTime
+        if (!jsonLd.publishedTime.isNullOrBlank() && publishedTime.isNullOrBlank()) {
+          publishedTime = jsonLd.publishedTime
         }
       }
     }
 
-    metadata.excerpt =
-      metadata.excerpt ?: values["description"] ?: values["og:description"] ?: // Use facebook open graph description.
-        values["twitter:description"] // Use twitter cards description.
+    excerpt = excerpt ?: values["description"] ?: values["og:description"] ?: values["twitter:description"]
 
-    if (metadata.siteName.isNullOrBlank()) {
-      metadata.siteName = values["og:site_name"]
+    if (siteName.isNullOrBlank()) {
+      siteName = values["og:site_name"]
     }
 
-    if (metadata.title.isNullOrBlank()) {
-      metadata.title = getArticleTitle(document)
+    if (title.isNullOrBlank()) {
+      title = getArticleTitle(document)
     }
-    if (metadata.title.isNullOrBlank()) {
-      metadata.title = values["og:title"] ?: // Use facebook open graph title.
-        values["twitter:title"] // Use twitter cards title.
-        ?: ""
+    if (title.isBlank()) {
+      title = values["og:title"] ?: values["twitter:title"] ?: ""
     }
 
-    metadata.charset = document.charset().name()
-
-    metadata.title = HtmlUtil.unescapeHtmlEntities(metadata.title)
-    metadata.byline = HtmlUtil.unescapeHtmlEntities(metadata.byline)
-    metadata.excerpt = HtmlUtil.unescapeHtmlEntities(metadata.excerpt)
-    metadata.siteName = HtmlUtil.unescapeHtmlEntities(metadata.siteName)
-    metadata.publishedTime = HtmlUtil.unescapeHtmlEntities(metadata.publishedTime)
-
-    return metadata
+    return ArticleMetadata(
+      title = HtmlUtil.unescapeHtmlEntities(title),
+      byline = HtmlUtil.unescapeHtmlEntities(byline),
+      excerpt = HtmlUtil.unescapeHtmlEntities(excerpt),
+      charset = document.charset().name(),
+      siteName = HtmlUtil.unescapeHtmlEntities(siteName),
+      publishedTime = HtmlUtil.unescapeHtmlEntities(publishedTime),
+    )
   }
 
   protected open fun getArticleTitle(doc: Document): String {
@@ -191,39 +191,41 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
           continue
         }
 
-        val metadata = ArticleMetadata()
-
         val nameMatch = Regex("\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
         val headlineMatch = Regex("\"headline\"\\s*:\\s*\"([^\"]+)\"").find(content)
 
-        var name = nameMatch?.groupValues?.get(1)
-        var headline = headlineMatch?.groupValues?.get(1)
+        val name = nameMatch?.groupValues?.get(1)
+        val headline = headlineMatch?.groupValues?.get(1)
 
-        if (!name.isNullOrBlank() && !headline.isNullOrBlank() && name != headline) {
+        val title = if (!name.isNullOrBlank() && !headline.isNullOrBlank() && name != headline) {
           val titleFromHtml = doc.title()
           val nameSimilarity = HtmlUtil.textSimilarity(name, titleFromHtml)
           val headlineSimilarity = HtmlUtil.textSimilarity(headline, titleFromHtml)
-
-          metadata.title = if (nameSimilarity > headlineSimilarity) name else headline
+          if (nameSimilarity > headlineSimilarity) name else headline
         } else {
-          metadata.title = headline ?: name
+          headline ?: name
         }
 
         val authorNameMatch = Regex("\"author\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
         val authorStringMatch = Regex("\"author\"\\s*:\\s*\"([^\"]+)\"").find(content)
-
-        metadata.byline = authorNameMatch?.groupValues?.get(1) ?: authorStringMatch?.groupValues?.get(1)
+        val byline = authorNameMatch?.groupValues?.get(1) ?: authorStringMatch?.groupValues?.get(1)
 
         val descriptionMatch = Regex("\"description\"\\s*:\\s*\"([^\"]+)\"").find(content)
-        metadata.excerpt = descriptionMatch?.groupValues?.get(1)
+        val excerpt = descriptionMatch?.groupValues?.get(1)
 
         val publisherMatch = Regex("\"publisher\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
-        metadata.siteName = publisherMatch?.groupValues?.get(1)
+        val siteName = publisherMatch?.groupValues?.get(1)
 
         val datePublishedMatch = Regex("\"datePublished\"\\s*:\\s*\"([^\"]+)\"").find(content)
-        metadata.publishedTime = datePublishedMatch?.groupValues?.get(1)
+        val publishedTime = datePublishedMatch?.groupValues?.get(1)
 
-        return metadata
+        return ArticleMetadata(
+          title = title,
+          byline = byline,
+          excerpt = excerpt,
+          siteName = siteName,
+          publishedTime = publishedTime,
+        )
       } catch (_: Exception) {
         continue
       }

@@ -9,6 +9,10 @@ import com.sermilion.readability4k.processor.ArticleGrabber
 import com.sermilion.readability4k.processor.MetadataParser
 import com.sermilion.readability4k.processor.Postprocessor
 import com.sermilion.readability4k.processor.Preprocessor
+import com.sermilion.readability4k.processor.ReadabilityArticleGrabber
+import com.sermilion.readability4k.processor.ReadabilityMetadataParser
+import com.sermilion.readability4k.processor.ReadabilityPostprocessor
+import com.sermilion.readability4k.processor.ReadabilityPreprocessor
 import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
 import kotlinx.coroutines.Dispatchers
@@ -87,10 +91,10 @@ open class Readability4K {
     options: ReadabilityOptions = ReadabilityOptions(),
     logger: Logger = Logger.NONE,
     regExUtil: RegExUtil = RegExUtil(),
-    preprocessor: Preprocessor = Preprocessor(regExUtil, logger),
-    metadataParser: MetadataParser = MetadataParser(regExUtil),
-    articleGrabber: ArticleGrabber = ArticleGrabber(options, regExUtil, logger),
-    postprocessor: Postprocessor = Postprocessor(logger),
+    preprocessor: Preprocessor = ReadabilityPreprocessor(regExUtil, logger),
+    metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
+    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
+    postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
   ) : this(
     uri,
     Ksoup.parse(
@@ -113,10 +117,10 @@ open class Readability4K {
     options: ReadabilityOptions = ReadabilityOptions(),
     logger: Logger = Logger.NONE,
     regExUtil: RegExUtil = RegExUtil(),
-    preprocessor: Preprocessor = Preprocessor(regExUtil, logger),
-    metadataParser: MetadataParser = MetadataParser(regExUtil),
-    articleGrabber: ArticleGrabber = ArticleGrabber(options, regExUtil, logger),
-    postprocessor: Postprocessor = Postprocessor(logger),
+    preprocessor: Preprocessor = ReadabilityPreprocessor(regExUtil, logger),
+    metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
+    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
+    postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
   ) {
     this.uri = uri
     this.document = document
@@ -179,6 +183,10 @@ open class Readability4K {
 
     val finalMetadata = buildArticleMetadata(metadata, articleContent)
 
+    val serializedContent = articleContent?.let { element ->
+      options.serializer?.invoke(element)
+    }
+
     return Article(
       uri = uri,
       title = finalMetadata.title,
@@ -190,7 +198,7 @@ open class Readability4K {
       lang = articleGrabber.articleLang,
       siteName = finalMetadata.siteName,
       publishedTime = finalMetadata.publishedTime,
-      serializer = options.serializer,
+      serializedContent = serializedContent,
     )
   }
 
