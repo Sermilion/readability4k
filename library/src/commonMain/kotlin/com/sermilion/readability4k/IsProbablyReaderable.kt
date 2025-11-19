@@ -5,41 +5,23 @@ package com.sermilion.readability4k
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.sermilion.readability4k.util.RegExUtil
+import com.sermilion.readability4k.util.VisibilityUtil
 import kotlin.math.sqrt
+
+private val defaultRegEx = RegExUtil()
 
 data class ReadableCheckOptions(
   val minScore: Int = 20,
   val minContentLength: Int = 140,
-  val visibilityChecker: (Element) -> Boolean = ::isNodeVisible,
+  val visibilityChecker: (Element) -> Boolean = VisibilityUtil::isNodeVisible,
 )
 
-fun isNodeVisible(node: Element): Boolean {
-  val style = node.attr("style")
-  if (style.contains("display:none", ignoreCase = true) ||
-    style.contains("display: none", ignoreCase = true)
-  ) {
-    return false
-  }
-  if (style.contains("visibility:hidden", ignoreCase = true) ||
-    style.contains("visibility: hidden", ignoreCase = true)
-  ) {
-    return false
-  }
-  if (node.hasAttr("hidden")) {
-    return false
-  }
-  if (node.hasAttr("aria-hidden") && node.attr("aria-hidden") == "true") {
-    val className = node.className()
-    if (!className.contains("fallback-image")) {
-      return false
-    }
-  }
-  return true
-}
-
 @Suppress("CyclomaticComplexMethod", "LoopWithTooManyJumpStatements", "MaxLineLength")
-fun isProbablyReaderable(doc: Document, options: ReadableCheckOptions = ReadableCheckOptions()): Boolean {
-  val regEx = RegExUtil()
+fun isProbablyReaderable(
+  doc: Document,
+  options: ReadableCheckOptions = ReadableCheckOptions(),
+  regEx: RegExUtil = defaultRegEx,
+): Boolean {
   val unlikelyPattern = Regex(
     "-ad-|banner|combx|comment|community|cover-wrap|disqus|extra|footer|gdpr|" +
       "header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|" +

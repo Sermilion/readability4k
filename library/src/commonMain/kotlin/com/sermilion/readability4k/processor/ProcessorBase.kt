@@ -5,6 +5,7 @@ import com.fleeksoft.ksoup.nodes.Node
 import com.fleeksoft.ksoup.nodes.TextNode
 import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
+import com.sermilion.readability4k.util.VisibilityUtil
 
 /**
  * Contains common utils for Preprocessor and Postprocessor
@@ -81,29 +82,7 @@ abstract class ProcessorBase(protected val logger: Logger = Logger.NONE) {
     return textContent
   }
 
-  protected open fun isProbablyVisible(node: Element): Boolean {
-    val style = node.attr("style")
-    if (style.contains("display:none", ignoreCase = true) ||
-      style.contains("display: none", ignoreCase = true)
-    ) {
-      return false
-    }
-    if (style.contains("visibility:hidden", ignoreCase = true) ||
-      style.contains("visibility: hidden", ignoreCase = true)
-    ) {
-      return false
-    }
-    if (node.hasAttr("hidden")) {
-      return false
-    }
-    if (node.hasAttr("aria-hidden") && node.attr("aria-hidden") == "true") {
-      val className = node.className()
-      if (!className.contains("fallback-image")) {
-        return false
-      }
-    }
-    return true
-  }
+  protected open fun isProbablyVisible(node: Element): Boolean = VisibilityUtil.isNodeVisible(node)
 
   protected open fun isSingleImage(node: Element): Boolean {
     var current: Element? = node

@@ -39,6 +39,7 @@ kotlin {
 
         jvmTest.dependencies {
             implementation(libs.kotest.runner.junit5.jvm)
+            implementation(libs.mockk)
         }
     }
 }

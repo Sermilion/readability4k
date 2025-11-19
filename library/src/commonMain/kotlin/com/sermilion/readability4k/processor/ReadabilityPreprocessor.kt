@@ -9,17 +9,17 @@ import com.sermilion.readability4k.util.RegExUtil
 /**
  * Performs basic sanitization before starting the extraction process.
  */
-open class Preprocessor(
+open class ReadabilityPreprocessor(
   protected val regEx: RegExUtil = RegExUtil(),
   logger: Logger = Logger.NONE,
   protected val noscriptHandler: NoscriptHandler = ContentAwareNoscriptHandler,
-) : ProcessorBase(logger) {
+) : ProcessorBase(logger), Preprocessor {
 
   /**
    * Prepare the HTML document for readability to scrape it.
    * This includes things like stripping javascript, CSS, and handling terrible markup.
    */
-  open fun prepareDocument(document: Document) {
+  override fun prepareDocument(document: Document) {
     logger.debug("Starting to prepare document")
 
     unwrapNoscriptImages(document)
