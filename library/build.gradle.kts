@@ -73,6 +73,7 @@ publishing {
   publications.withType<MavenPublication> {
     artifactId = when (name) {
       "kotlinMultiplatform" -> "readability4k"
+      "androidRelease" -> "readability4k-android"
       "jvm" -> "readability4k-jvm"
       "iosArm64" -> "readability4k-iosarm64"
       "iosSimulatorArm64" -> "readability4k-iossimulatorarm64"
