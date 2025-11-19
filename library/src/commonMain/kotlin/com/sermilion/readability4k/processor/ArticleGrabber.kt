@@ -8,9 +8,9 @@ import com.sermilion.readability4k.model.ArticleGrabberOptions
 import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.model.ReadabilityObject
 import com.sermilion.readability4k.model.ReadabilityOptions
+import com.sermilion.readability4k.util.HtmlUtil
 import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
-import kotlin.math.abs
 import kotlin.math.floor
 
 open class ArticleGrabber(
@@ -26,12 +26,21 @@ open class ArticleGrabber(
   var articleDir: String? = null
     protected set
 
+  var articleLang: String? = null
+    protected set
+
   protected val nbTopCandidates = options.nbTopCandidates
-  protected val wordThreshold = options.wordThreshold
+  protected val charThreshold = options.charThreshold
+  protected val allowedVideoRegex = options.allowedVideoRegex
+  protected val linkDensityModifier = options.linkDensityModifier
 
   protected val readabilityObjects = HashMap<Element, ReadabilityObject>()
 
   protected val readabilityDataTable = HashMap<Element, Boolean>()
+
+  protected open fun isVideoContent(matchString: String): Boolean {
+    return allowedVideoRegex?.containsMatchIn(matchString) ?: regEx.isVideo(matchString)
+  }
 
   @Suppress("NestedBlockDepth")
   open fun grabArticle(
@@ -108,7 +117,7 @@ open class ArticleGrabber(
       // finding the content, and the sieve approach gives us a higher likelihood of
       // finding the -right- content.
       val textLength = getInnerText(articleContent, regEx, true).length
-      if (textLength < this.wordThreshold) {
+      if (textLength < this.charThreshold) {
         parseSuccessful = false
         page.html(pageCacheHtml)
 
@@ -140,6 +149,8 @@ open class ArticleGrabber(
       if (parseSuccessful) {
         // Find out text direction from ancestors of final top candidate.
         getTextDirection(topCandidate, doc)
+
+        getLanguage(doc)
 
         return articleContent
       }
@@ -653,11 +664,12 @@ open class ArticleGrabber(
       return 0.0
     }
 
-    var linkLength = 0
+    var linkLength = 0.0
 
-    // XXX implement _reduceNodeList?
     element.getElementsByTag("a").forEach { linkNode ->
-      linkLength += this.getInnerText(linkNode, regEx).length
+      val href = linkNode.attr("href")
+      val coefficient = if (href.isNotEmpty() && regEx.isHashUrl(href)) 0.3 else 1.0
+      linkLength += this.getInnerText(linkNode, regEx).length * coefficient
     }
 
     return linkLength / textLength.toDouble()
@@ -713,7 +725,7 @@ open class ArticleGrabber(
           val nodeContent = this.getInnerText(sibling, regEx)
           val nodeLength = nodeContent.length
 
-          if (nodeLength > 80 && linkDensity < 0.25) {
+          if (nodeLength > 80 && linkDensity < 0.25 + linkDensityModifier) {
             append = true
           } else if (nodeLength < 80 &&
             nodeLength > 0 &&
@@ -773,29 +785,12 @@ open class ArticleGrabber(
       cleanMatchedNodes(topCandidate, shareRegex)
     }
 
-    // If there is only one h2 and its text content substantially equals article title,
-    // they are probably using it as a header and not a subheader,
-    // so remove it since we already extract the title separately.
-    val h2 = articleContent.getElementsByTag("h2")
-    if (h2.size == 1) {
-      metadata.title?.let { articleTitle ->
-        if (articleTitle.isNotEmpty()) {
-          val lengthSimilarRate =
-            (h2[0].text().length - articleTitle.length) / articleTitle.length.toFloat()
-          if (abs(lengthSimilarRate) < 0.5) {
-            val titlesMatch =
-              if (lengthSimilarRate > 0) {
-                h2[0].text().contains(articleTitle)
-              } else {
-                articleTitle.contains(h2[0].text())
-              }
+    removeNodes(articleContent, "h1") { h1 ->
+      headerDuplicatesTitle(h1, metadata)
+    }
 
-            if (titlesMatch) {
-              this.clean(articleContent, "h2")
-            }
-          }
-        }
-      }
+    removeNodes(articleContent, "h2") { h2 ->
+      headerDuplicatesTitle(h2, metadata)
     }
 
     this.clean(articleContent, "iframe")
@@ -986,7 +981,7 @@ open class ArticleGrabber(
 
         var embedCount = 0
         node.getElementsByTag("embed").forEach {
-          if (regEx.isVideo(it.attr("src")) == false) {
+          if (isVideoContent(it.attr("src")) == false) {
             embedCount += 1
           }
         }
@@ -999,8 +994,8 @@ open class ArticleGrabber(
             (!isList && li > p) ||
             (input > floor(p / 3.0)) ||
             (!isList && contentLength < 25 && img == 0 && !hasAncestorTag(node, "figure")) ||
-            (!isList && weight < 25 && linkDensity > 0.2) ||
-            (weight >= 25 && linkDensity > 0.5) ||
+            (!isList && weight < 25 && linkDensity > 0.2 + linkDensityModifier) ||
+            (weight >= 25 && linkDensity > 0.5 + linkDensityModifier) ||
             ((embedCount == 1 && contentLength < 75) || embedCount > 1)
         return@removeNodes haveToRemove
       }
@@ -1061,12 +1056,12 @@ open class ArticleGrabber(
         val attributeValues = element.attributes().joinToString("|") { it.value }
 
         // First, check the elements attributes to see if any of them contain youtube or vimeo
-        if (regEx.isVideo(attributeValues)) {
+        if (isVideoContent(attributeValues)) {
           return@removeNodes false
         }
 
         // Then check the elements inside this element for the same.
-        if (regEx.isVideo(element.html())) {
+        if (isVideoContent(element.html())) {
           return@removeNodes false
         }
       }
@@ -1150,6 +1145,33 @@ open class ArticleGrabber(
         return
       }
     }
+  }
+
+  protected open fun getLanguage(doc: Document) {
+    val htmlElement = doc.selectFirst("html")
+    if (htmlElement != null) {
+      val lang = htmlElement.attr("lang")
+      if (lang.isNotBlank()) {
+        this.articleLang = lang
+      }
+    }
+  }
+
+  protected open fun headerDuplicatesTitle(node: Element, metadata: ArticleMetadata): Boolean {
+    val tagName = node.tagName()
+    if (tagName != "h1" && tagName != "h2") {
+      return false
+    }
+
+    val title = metadata.title ?: return false
+    if (title.isBlank()) {
+      return false
+    }
+
+    val heading = getInnerText(node, regEx)
+    val similarity = HtmlUtil.textSimilarity(heading, title)
+
+    return similarity > 0.75
   }
 
   protected open fun getReadabilityObject(element: Element): ReadabilityObject? = readabilityObjects[element]

@@ -22,6 +22,7 @@ open class Preprocessor(
   open fun prepareDocument(document: Document) {
     logger.debug("Starting to prepare document")
 
+    unwrapNoscriptImages(document)
     removeScripts(document)
     removeNoscripts(document)
 
@@ -36,6 +37,8 @@ open class Preprocessor(
     replaceBrs(document, regEx)
 
     replaceNodes(document, "font", "span")
+
+    fixLazyImages(document)
   }
 
   protected open fun removeScripts(document: Document) {
@@ -147,6 +150,122 @@ open class Preprocessor(
           val sibling = next.nextSibling()
           p.appendChild(next)
           next = sibling
+        }
+      }
+    }
+  }
+
+  @Suppress("CyclomaticComplexMethod", "NestedBlockDepth")
+  protected open fun fixLazyImages(document: Document) {
+    val imageExtensionPattern = Regex("\\.(jpg|jpeg|png|webp)\\s+\\d", RegexOption.IGNORE_CASE)
+    val srcPattern = Regex("^\\s*\\S+\\.(jpg|jpeg|png|webp)\\S*\\s*$", RegexOption.IGNORE_CASE)
+
+    document.select("img, picture, figure").forEach { elem ->
+      if (elem.tagName() == "img") {
+        val src = elem.attr("src")
+        val srcset = elem.attr("srcset")
+
+        if ((src.isEmpty() || src.startsWith("data:")) &&
+          (srcset.isEmpty() || srcset.startsWith("data:"))
+        ) {
+          val attributesList = elem.attributes().toList()
+          for (attr in attributesList) {
+            if (attr.key == "src" || attr.key == "srcset") {
+              continue
+            }
+
+            val copyTo = when {
+              srcPattern.matches(attr.value) -> "src"
+              imageExtensionPattern.containsMatchIn(attr.value) -> "srcset"
+              else -> null
+            }
+
+            if (copyTo != null) {
+              if (elem.tagName() == "img") {
+                elem.attr(copyTo, attr.value)
+              } else if (elem.tagName() == "picture") {
+                val img = elem.selectFirst("img")
+                if (img != null) {
+                  img.attr(copyTo, attr.value)
+                } else {
+                  val newImg = document.createElement("img")
+                  newImg.attr(copyTo, attr.value)
+                  elem.appendChild(newImg)
+                }
+              }
+            }
+          }
+        }
+      } else if (elem.tagName() == "figure" && !isSingleImage(elem)) {
+        val attributesList = elem.attributes().toList()
+        for (attr in attributesList) {
+          val copyTo = when {
+            srcPattern.matches(attr.value) -> "src"
+            imageExtensionPattern.containsMatchIn(attr.value) -> "srcset"
+            else -> null
+          }
+
+          if (copyTo != null) {
+            val img = document.createElement("img")
+            img.attr(copyTo, attr.value)
+            elem.appendChild(img)
+            break
+          }
+        }
+      }
+    }
+  }
+
+  @Suppress("CyclomaticComplexMethod", "NestedBlockDepth")
+  protected open fun unwrapNoscriptImages(document: Document) {
+    val imgElements = document.select("img")
+
+    imgElements.forEach { img ->
+      val src = img.attr("src")
+      val srcset = img.attr("srcset")
+      val dataSrc = img.attr("data-src")
+      val dataSrcset = img.attr("data-srcset")
+
+      if (src.isEmpty() && srcset.isEmpty() && dataSrc.isEmpty() && dataSrcset.isEmpty()) {
+        img.remove()
+      }
+    }
+
+    val noscripts = document.select("noscript")
+
+    noscripts.forEach { noscript ->
+      val tmp = document.createElement("div")
+      tmp.html(noscript.html())
+
+      if (!isSingleImage(tmp)) {
+        return@forEach
+      }
+
+      val prevElement = noscript.previousElementSibling()
+      if (prevElement != null && isSingleImage(prevElement)) {
+        val prevImg = if (prevElement.tagName() == "img") {
+          prevElement
+        } else {
+          prevElement.selectFirst("img")
+        }
+
+        val newImg = tmp.selectFirst("img")
+
+        if (prevImg != null && newImg != null) {
+          val attributesList = prevImg.attributes().toList()
+          for (attr in attributesList) {
+            if (attr.value.isEmpty()) {
+              continue
+            }
+
+            if (attr.key == "src" || attr.key == "srcset" || attr.value.startsWith("data:")) {
+              if (newImg.hasAttr(attr.key)) {
+                newImg.attr("data-old-${attr.key}", attr.value)
+              }
+            }
+          }
+
+          prevElement.replaceWith(newImg.clone())
         }
       }
     }

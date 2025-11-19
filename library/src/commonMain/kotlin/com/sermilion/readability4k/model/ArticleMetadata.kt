@@ -6,4 +6,7 @@ open class ArticleMetadata(
   var excerpt: String? = null,
   var dir: String? = null,
   var charset: String? = null,
+  var lang: String? = null,
+  var siteName: String? = null,
+  var publishedTime: String? = null,
 )

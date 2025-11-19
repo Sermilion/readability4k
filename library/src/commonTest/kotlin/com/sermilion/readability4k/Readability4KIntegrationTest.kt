@@ -368,7 +368,7 @@ class Readability4KIntegrationTest :
 
         val options = ReadabilityOptions(
           maxElemsToParse = 1000,
-          wordThreshold = 2,
+          charThreshold = 2,
         )
 
         val readability = Readability4K("https://example.com", html, options)

@@ -2,17 +2,19 @@ package com.sermilion.readability4k.processor
 
 import com.fleeksoft.ksoup.nodes.Document
 import com.sermilion.readability4k.model.ArticleMetadata
+import com.sermilion.readability4k.util.HtmlUtil
 import com.sermilion.readability4k.util.RegExUtil
 
 open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : ProcessorBase() {
 
-  open fun getArticleMetadata(document: Document): ArticleMetadata {
+  @Suppress("CyclomaticComplexMethod")
+  open fun getArticleMetadata(document: Document, disableJSONLD: Boolean = false): ArticleMetadata {
     val metadata = ArticleMetadata()
     val values = HashMap<String, String>()
 
     val namePattern =
       Regex("^\\s*((twitter)\\s*:\\s*)?(description|title)\\s*$", RegexOption.IGNORE_CASE)
-    val propertyPattern = Regex("^\\s*og\\s*:\\s*(description|title)\\s*$", RegexOption.IGNORE_CASE)
+    val propertyPattern = Regex("^\\s*og\\s*:\\s*(description|title|site_name)\\s*$", RegexOption.IGNORE_CASE)
 
     document.select("meta").forEach { element ->
       val elementName = element.attr("name")
@@ -20,6 +22,11 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
 
       if (elementName == "author" || elementProperty == "author") {
         metadata.byline = element.attr("content")
+        return@forEach
+      }
+
+      if (elementProperty == "article:published_time" || elementName == "parsely-pub-date") {
+        metadata.publishedTime = element.attr("content")
         return@forEach
       }
 
@@ -39,11 +46,38 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
       }
     }
 
+    if (!disableJSONLD) {
+      val jsonLd = getJSONLD(document)
+      if (jsonLd != null) {
+        if (!jsonLd.title.isNullOrBlank()) {
+          metadata.title = jsonLd.title
+        }
+        if (!jsonLd.byline.isNullOrBlank() && metadata.byline.isNullOrBlank()) {
+          metadata.byline = jsonLd.byline
+        }
+        if (!jsonLd.excerpt.isNullOrBlank()) {
+          metadata.excerpt = jsonLd.excerpt
+        }
+        if (!jsonLd.siteName.isNullOrBlank()) {
+          metadata.siteName = jsonLd.siteName
+        }
+        if (!jsonLd.publishedTime.isNullOrBlank() && metadata.publishedTime.isNullOrBlank()) {
+          metadata.publishedTime = jsonLd.publishedTime
+        }
+      }
+    }
+
     metadata.excerpt =
-      values["description"] ?: values["og:description"] ?: // Use facebook open graph description.
+      metadata.excerpt ?: values["description"] ?: values["og:description"] ?: // Use facebook open graph description.
         values["twitter:description"] // Use twitter cards description.
 
-    metadata.title = getArticleTitle(document)
+    if (metadata.siteName.isNullOrBlank()) {
+      metadata.siteName = values["og:site_name"]
+    }
+
+    if (metadata.title.isNullOrBlank()) {
+      metadata.title = getArticleTitle(document)
+    }
     if (metadata.title.isNullOrBlank()) {
       metadata.title = values["og:title"] ?: // Use facebook open graph title.
         values["twitter:title"] // Use twitter cards title.
@@ -51,6 +85,12 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
     }
 
     metadata.charset = document.charset().name()
+
+    metadata.title = HtmlUtil.unescapeHtmlEntities(metadata.title)
+    metadata.byline = HtmlUtil.unescapeHtmlEntities(metadata.byline)
+    metadata.excerpt = HtmlUtil.unescapeHtmlEntities(metadata.excerpt)
+    metadata.siteName = HtmlUtil.unescapeHtmlEntities(metadata.siteName)
+    metadata.publishedTime = HtmlUtil.unescapeHtmlEntities(metadata.publishedTime)
 
     return metadata
   }
@@ -135,4 +175,60 @@ open class MetadataParser(protected val regEx: RegExUtil = RegExUtil()) : Proces
       )
 
   protected open fun wordCount(str: String): Int = str.split("\\s+".toRegex()).size
+
+  @Suppress("NestedBlockDepth", "LoopWithTooManyJumpStatements")
+  protected open fun getJSONLD(doc: Document): ArticleMetadata? {
+    val scripts = doc.select("script[type=application/ld+json]")
+
+    val jsonLdArticleTypes = Regex("Article|NewsArticle|BlogPosting|ReportageNewsArticle")
+
+    for (script in scripts) {
+      val content = script.html()
+      if (content.isBlank()) continue
+
+      try {
+        if (!jsonLdArticleTypes.containsMatchIn(content)) {
+          continue
+        }
+
+        val metadata = ArticleMetadata()
+
+        val nameMatch = Regex("\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
+        val headlineMatch = Regex("\"headline\"\\s*:\\s*\"([^\"]+)\"").find(content)
+
+        var name = nameMatch?.groupValues?.get(1)
+        var headline = headlineMatch?.groupValues?.get(1)
+
+        if (!name.isNullOrBlank() && !headline.isNullOrBlank() && name != headline) {
+          val titleFromHtml = doc.title()
+          val nameSimilarity = HtmlUtil.textSimilarity(name, titleFromHtml)
+          val headlineSimilarity = HtmlUtil.textSimilarity(headline, titleFromHtml)
+
+          metadata.title = if (nameSimilarity > headlineSimilarity) name else headline
+        } else {
+          metadata.title = headline ?: name
+        }
+
+        val authorNameMatch = Regex("\"author\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
+        val authorStringMatch = Regex("\"author\"\\s*:\\s*\"([^\"]+)\"").find(content)
+
+        metadata.byline = authorNameMatch?.groupValues?.get(1) ?: authorStringMatch?.groupValues?.get(1)
+
+        val descriptionMatch = Regex("\"description\"\\s*:\\s*\"([^\"]+)\"").find(content)
+        metadata.excerpt = descriptionMatch?.groupValues?.get(1)
+
+        val publisherMatch = Regex("\"publisher\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"").find(content)
+        metadata.siteName = publisherMatch?.groupValues?.get(1)
+
+        val datePublishedMatch = Regex("\"datePublished\"\\s*:\\s*\"([^\"]+)\"").find(content)
+        metadata.publishedTime = datePublishedMatch?.groupValues?.get(1)
+
+        return metadata
+      } catch (_: Exception) {
+        continue
+      }
+    }
+
+    return null
+  }
 }

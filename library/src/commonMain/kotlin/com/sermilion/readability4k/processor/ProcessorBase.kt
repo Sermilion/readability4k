@@ -80,4 +80,45 @@ abstract class ProcessorBase(protected val logger: Logger = Logger.NONE) {
 
     return textContent
   }
+
+  protected open fun isProbablyVisible(node: Element): Boolean {
+    val style = node.attr("style")
+    if (style.contains("display:none", ignoreCase = true) ||
+      style.contains("display: none", ignoreCase = true)
+    ) {
+      return false
+    }
+    if (style.contains("visibility:hidden", ignoreCase = true) ||
+      style.contains("visibility: hidden", ignoreCase = true)
+    ) {
+      return false
+    }
+    if (node.hasAttr("hidden")) {
+      return false
+    }
+    if (node.hasAttr("aria-hidden") && node.attr("aria-hidden") == "true") {
+      val className = node.className()
+      if (!className.contains("fallback-image")) {
+        return false
+      }
+    }
+    return true
+  }
+
+  protected open fun isSingleImage(node: Element): Boolean {
+    var current: Element? = node
+    while (current != null) {
+      if (current.tagName() == "img") {
+        return true
+      }
+
+      val children = current.children()
+      if (children.size != 1 || current.textNodes().any { it.text().trim().isNotEmpty() }) {
+        return false
+      }
+
+      current = children.firstOrNull()
+    }
+    return false
+  }
 }

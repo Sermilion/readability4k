@@ -1,5 +1,7 @@
 package com.sermilion.readability4k.model
 
+import com.fleeksoft.ksoup.nodes.Element
+
 /**
  * Configuration options for the Readability parser.
  *
@@ -10,10 +12,25 @@ package com.sermilion.readability4k.model
  * @property nbTopCandidates Number of top candidate nodes to consider when analyzing how
  *                           competitive the extraction is. Higher values may improve accuracy
  *                           but increase processing time. Default: 5
- * @property wordThreshold   Minimum number of words an article must have to return a result.
- *                           Articles with fewer words will not be extracted. Default: 500
+ * @property charThreshold   Minimum number of characters an article must have to return a result.
+ *                           Articles with fewer characters will not be extracted. Default: 500
+ *                           Note: Despite the name, this counts characters, not words.
  * @property additionalClassesToPreserve Additional CSS class names to preserve during content
  *                           cleaning. By default, only "readability-styled" and "page" are preserved.
+ * @property keepClasses     Whether to preserve all CSS classes on elements. When false (default),
+ *                           classes are removed except those in additionalClassesToPreserve and
+ *                           built-in preserved classes. When true, all classes are kept. Default: false
+ * @property disableJSONLD   Whether to disable JSON-LD metadata extraction. When false (default),
+ *                           the parser will extract metadata from JSON-LD structured data.
+ *                           Set to true to skip JSON-LD parsing for performance. Default: false
+ * @property serializer      Custom function to serialize Element to HTML string. When null (default),
+ *                           uses Element.html(). Provide a custom serializer if you need special
+ *                           HTML output formatting. Default: null
+ * @property allowedVideoRegex Custom regex pattern to identify video elements. When null (default),
+ *                           uses built-in patterns for YouTube, Vimeo, etc. Provide a custom pattern
+ *                           to support additional video platforms. Default: null
+ * @property linkDensityModifier Modifier to adjust link density calculation threshold. Higher values
+ *                           make the algorithm more lenient with links. Default: 0.0
  *
  * ## Example
  *
@@ -21,27 +38,31 @@ package com.sermilion.readability4k.model
  * val options = ReadabilityOptions(
  *     maxElemsToParse = 1000,
  *     nbTopCandidates = 3,
- *     wordThreshold = 300,
- *     additionalClassesToPreserve = setOf("highlight", "important")
+ *     charThreshold = 300,
+ *     additionalClassesToPreserve = setOf("highlight", "important"),
+ *     keepClasses = false,
+ *     disableJSONLD = false
  * )
  * ```
  */
 open class ReadabilityOptions(
   val maxElemsToParse: Int = DEFAULT_MAX_ELEMS_TO_PARSE,
   val nbTopCandidates: Int = DEFAULT_N_TOP_CANDIDATES,
-  val wordThreshold: Int = DEFAULT_WORD_THRESHOLD,
+  val charThreshold: Int = DEFAULT_CHAR_THRESHOLD,
   val additionalClassesToPreserve: Collection<String> = emptyList(),
+  val keepClasses: Boolean = DEFAULT_KEEP_CLASSES,
+  val disableJSONLD: Boolean = DEFAULT_DISABLE_JSONLD,
+  val serializer: ((Element) -> String)? = null,
+  val allowedVideoRegex: Regex? = null,
+  val linkDensityModifier: Double = DEFAULT_LINK_DENSITY_MODIFIER,
 ) {
 
   companion object {
-    // Max number of nodes supported by this parser. Default: 0 (no limit)
     const val DEFAULT_MAX_ELEMS_TO_PARSE = 0
-
-    // The number of top candidates to consider when analysing how
-    // tight the competition is among candidates.
     const val DEFAULT_N_TOP_CANDIDATES = 5
-
-    // The default number of words an article must have in order to return a result
-    const val DEFAULT_WORD_THRESHOLD = 500
+    const val DEFAULT_CHAR_THRESHOLD = 500
+    const val DEFAULT_KEEP_CLASSES = false
+    const val DEFAULT_DISABLE_JSONLD = false
+    const val DEFAULT_LINK_DENSITY_MODIFIER = 0.0
   }
 }

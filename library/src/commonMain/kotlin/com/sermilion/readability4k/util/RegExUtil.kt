@@ -37,6 +37,8 @@ open class RegExUtil {
     const val WHITESPACE_DEFAULT_PATTERN = "^\\s*$"
 
     const val HAS_CONTENT_DEFAULT_PATTERN = "\\S$"
+
+    const val HASH_URL_DEFAULT_PATTERN = "^#.+"
   }
 
   protected val unlikelyCandidates: Regex
@@ -65,6 +67,8 @@ open class RegExUtil {
 
   protected val hasContent: Regex
 
+  protected val hashUrl: Regex
+
   constructor(
     unlikelyCandidatesPattern: String = UNLIKELY_CANDIDATES_DEFAULT_PATTERN,
     okMaybeItsACandidatePattern: String = OK_MAYBE_ITS_A_CANDIDATE_DEFAULT_PATTERN,
@@ -79,6 +83,7 @@ open class RegExUtil {
     prevLinkPattern: String = PREV_LINK_DEFAULT_PATTERN,
     whitespacePattern: String = WHITESPACE_DEFAULT_PATTERN,
     hasContentPattern: String = HAS_CONTENT_DEFAULT_PATTERN,
+    hashUrlPattern: String = HASH_URL_DEFAULT_PATTERN,
   ) {
     this.unlikelyCandidates = Regex(unlikelyCandidatesPattern, RegexOption.IGNORE_CASE)
     this.okMaybeItsACandidate = Regex(okMaybeItsACandidatePattern, RegexOption.IGNORE_CASE)
@@ -93,6 +98,7 @@ open class RegExUtil {
     this.prevLink = Regex(prevLinkPattern, RegexOption.IGNORE_CASE)
     this.whitespace = Regex(whitespacePattern)
     this.hasContent = Regex(hasContentPattern)
+    this.hashUrl = Regex(hashUrlPattern)
   }
 
   open fun isPositive(matchString: String): Boolean = positive.containsMatchIn(matchString)
@@ -112,4 +118,6 @@ open class RegExUtil {
   open fun normalize(text: String): String = normalize.replace(text, " ")
 
   open fun isVideo(matchString: String): Boolean = videos.containsMatchIn(matchString)
+
+  open fun isHashUrl(url: String): Boolean = hashUrl.containsMatchIn(url)
 }

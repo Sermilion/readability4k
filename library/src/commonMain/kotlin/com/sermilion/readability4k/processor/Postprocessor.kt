@@ -18,16 +18,19 @@ open class Postprocessor(protected val logger: Logger = Logger.NONE) {
     articleContent: Element,
     articleUri: String,
     additionalClassesToPreserve: Collection<String> = emptyList(),
+    keepClasses: Boolean = false,
   ) {
     // Readability cannot open relative uris so we convert them to absolute uris.
     fixRelativeUris(originalDocument, articleContent, articleUri)
 
-    // Remove IDs and classes.
-    val classesToPreserve = listOf(
-      CLASSES_TO_PRESERVE,
-      additionalClassesToPreserve,
-    ).flatten().toSet()
-    cleanClasses(articleContent, classesToPreserve)
+    // Remove IDs and classes unless keepClasses is enabled.
+    if (!keepClasses) {
+      val classesToPreserve = listOf(
+        CLASSES_TO_PRESERVE,
+        additionalClassesToPreserve,
+      ).flatten().toSet()
+      cleanClasses(articleContent, classesToPreserve)
+    }
   }
 
   /**

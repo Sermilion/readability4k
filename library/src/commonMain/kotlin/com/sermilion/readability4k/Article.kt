@@ -17,6 +17,9 @@ import com.fleeksoft.ksoup.nodes.Element
  * @property byline Author name extracted from metadata or byline
  * @property dir Text direction of the content (e.g., "ltr" or "rtl")
  * @property charset Character encoding of the original document
+ * @property lang Language of the article content (e.g., "en", "fr")
+ * @property siteName Name of the website/publication
+ * @property publishedTime Publication date/time of the article
  */
 open class Article(
   val uri: String,
@@ -26,6 +29,10 @@ open class Article(
   val byline: String? = null,
   val dir: String? = null,
   val charset: String? = null,
+  val lang: String? = null,
+  val siteName: String? = null,
+  val publishedTime: String? = null,
+  val serializer: ((Element) -> String)? = null,
 ) {
 
   /**
@@ -34,9 +41,14 @@ open class Article(
    * Note: No encoding is applied to this content. For content with explicit
    * UTF-8 encoding, see [contentWithUtf8Encoding]. For more details, see
    * [https://github.com/dankito/Readability4J/issues/1].
+   *
+   * If a custom serializer is provided via options, it will be used instead
+   * of the default Element.html() method.
    */
   val content: String?
-    get() = articleContent?.html()
+    get() = articleContent?.let { element ->
+      serializer?.invoke(element) ?: element.html()
+    }
 
   /**
    * Content with explicit UTF-8 encoding.

@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
  * ```kotlin
  * val options = ReadabilityOptions(
  *     maxElemsToParse = 1000,
- *     wordThreshold = 500
+ *     charThreshold = 500
  * )
  * val readability = Readability4K(url, html, options)
  * ```
@@ -160,9 +160,9 @@ open class Readability4K {
       }
     }
 
-    preprocessor.prepareDocument(document)
+    val metadata = metadataParser.getArticleMetadata(document, options.disableJSONLD)
 
-    val metadata = metadataParser.getArticleMetadata(document)
+    preprocessor.prepareDocument(document)
 
     val articleContent = articleGrabber.grabArticle(document, metadata)
     logger.debug("Grabbed: $articleContent")
@@ -173,6 +173,7 @@ open class Readability4K {
         articleContent,
         uri,
         options.additionalClassesToPreserve,
+        options.keepClasses,
       )
     }
 
@@ -186,6 +187,10 @@ open class Readability4K {
       byline = finalMetadata.byline,
       dir = articleGrabber.articleDir,
       charset = finalMetadata.charset,
+      lang = articleGrabber.articleLang,
+      siteName = finalMetadata.siteName,
+      publishedTime = finalMetadata.publishedTime,
+      serializer = options.serializer,
     )
   }
 
@@ -237,6 +242,10 @@ open class Readability4K {
       excerpt = excerpt,
       byline = byline,
       charset = metadata.charset,
+      dir = metadata.dir,
+      lang = metadata.lang,
+      siteName = metadata.siteName,
+      publishedTime = metadata.publishedTime,
     )
   }
 }

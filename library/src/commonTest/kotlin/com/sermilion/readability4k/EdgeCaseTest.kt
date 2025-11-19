@@ -70,7 +70,7 @@ class EdgeCaseTest :
         </html>
           """.trimIndent()
 
-          val options = ReadabilityOptions(wordThreshold = 100)
+          val options = ReadabilityOptions(charThreshold = 100)
           val readability = Readability4K("https://example.com", html, options)
           val article = readability.parse()
 

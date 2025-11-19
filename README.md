@@ -70,18 +70,49 @@ suspend fun extractArticle(url: String, html: String) {
 
 ### Custom Options
 
+Readability4K supports extensive configuration options for 100% compatibility with Mozilla Readability:
+
 ```kotlin
 import com.sermilion.readability4k.model.ReadabilityOptions
 
 val options = ReadabilityOptions(
-  maxElemsToParse = 1000,  // Limit number of elements to parse
-  wordThreshold = 500,      // Minimum words for article detection
-  additionalClassesToPreserve = listOf("custom-class")
+  // Core Options
+  maxElemsToParse = 1000,           // Limit number of elements to parse (0 = unlimited)
+  nbTopCandidates = 5,               // Number of top candidates to consider
+  charThreshold = 500,                // Minimum characters for article detection
+
+  // Class Handling
+  additionalClassesToPreserve = listOf("custom-class"),  // Preserve specific CSS classes
+  keepClasses = false,                // Keep all CSS classes (default: false)
+
+  // Metadata Options
+  disableJSONLD = false,              // Skip JSON-LD metadata parsing (default: false)
+
+  // Video Detection
+  allowedVideoRegex = Regex("youtube|vimeo|dailymotion"),  // Custom video pattern
+
+  // Link Density
+  linkDensityModifier = 0.0,          // Adjust link density threshold (default: 0.0)
+
+  // Custom Serialization
+  serializer = { element -> element.html() }  // Custom HTML serializer function
 )
 
 val readability = Readability4K(url, html, options)
 val article = readability.parse()
 ```
+
+#### Option Details
+
+- **maxElemsToParse**: Prevents parsing very large documents. Set to 0 for unlimited.
+- **nbTopCandidates**: Higher values may improve accuracy but increase processing time.
+- **charThreshold**: Article must have this many characters to be extracted. ⚠️ **Breaking Change**: Renamed from `wordThreshold` (still counts characters, not words).
+- **additionalClassesToPreserve**: Preserves specified CSS classes in addition to built-in ones ("readability-styled", "page").
+- **keepClasses**: When true, preserves all CSS classes on elements.
+- **disableJSONLD**: Set to true to skip JSON-LD structured data parsing for better performance.
+- **allowedVideoRegex**: Custom regex to identify video embeds beyond the default YouTube/Vimeo/Dailymotion patterns.
+- **linkDensityModifier**: Positive values make the algorithm more lenient with links, negative values more strict.
+- **serializer**: Provide a custom function to serialize HTML elements instead of the default `element.html()`.
 
 ### Custom Logging
 
