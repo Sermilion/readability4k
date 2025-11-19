@@ -1,0 +1,72 @@
+name: Multiplatform CI
+
+on:
+  push:
+    branches:
+      - 'feat/R4K-**'
+      - 'fix/R4K-**'
+      - 'chore/R4K-**'
+      - 'main'
+      - 'renovate/**'
+    tags:
+      - '*.*.*'
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'feat/R4K-**'
+      - 'fix/R4K-**'
+      - 'chore/R4K-**'
+      - 'renovate/**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # v3.2.1
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+        with:
+          build-scan-publish: true
+          build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+          build-scan-terms-of-use-agree: "yes"
+
+      - name: Build and Test Project
+        run: ./gradlew build --parallel --build-cache
+        env:
+          GRADLE_OPTS: "-Xmx8g -XX:MaxMetaspaceSize=4g"
+
+  create-release:
+    needs: [build]
+    runs-on: self-hosted
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

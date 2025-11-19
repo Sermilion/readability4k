@@ -67,18 +67,19 @@ group = "com.sermilion"
 version = "0.1.0"
 
 publishing {
-  repositories {
-    mavenLocal()
-  }
-  publications.withType<MavenPublication> {
-    artifactId = when (name) {
-      "kotlinMultiplatform" -> "readability4k"
-      "androidRelease" -> "readability4k-android"
-      "jvm" -> "readability4k-jvm"
-      "iosArm64" -> "readability4k-iosarm64"
-      "iosSimulatorArm64" -> "readability4k-iossimulatorarm64"
-      "iosX64" -> "readability4k-iosx64"
-      else -> artifactId
+    repositories {
+        mavenLocal()
     }
-  }
+    publications.withType<MavenPublication> {
+        artifactId =
+            when (name) {
+                "kotlinMultiplatform" -> "readability4k"
+                "androidRelease" -> "readability4k-android"
+                "jvm" -> "readability4k-jvm"
+                "iosArm64" -> "readability4k-iosarm64"
+                "iosSimulatorArm64" -> "readability4k-iossimulatorarm64"
+                "iosX64" -> "readability4k-iosx64"
+                else -> artifactId
+            }
+    }
 }
