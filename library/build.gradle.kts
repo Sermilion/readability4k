@@ -87,7 +87,11 @@ tasks.named<Test>("jvmTest") {
 }
 
 group = "com.sermilion"
-version = "0.1.3"
+version = "0.1.4"
+
+val emptyJar by tasks.registering(Jar::class) {
+    archiveAppendix.set("empty")
+}
 
 publishing {
     repositories {
@@ -96,6 +100,11 @@ publishing {
     publications.withType<MavenPublication> {
         if (name == "kotlinMultiplatform") {
             artifactId = "readability4k"
+        }
+
+        val publicationName = name
+        if (publicationName in listOf("iosArm64", "iosSimulatorArm64", "iosX64")) {
+            artifact(emptyJar)
         }
     }
 }
