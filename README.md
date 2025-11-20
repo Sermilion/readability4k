@@ -1,5 +1,7 @@
 # Readability4K
 
+[![](https://jitpack.io/v/Sermilion/readability4k.svg)](https://jitpack.io/#Sermilion/readability4k)
+
 A Kotlin Multiplatform library for extracting the main readable content and metadata from web pages, based on Mozilla's Readability algorithm.
 
 ## Features
@@ -27,7 +29,7 @@ Add the dependency:
 
 ```kotlin
 dependencies {
-  implementation("com.github.Sermilion.readability4k:readability4k:0.1.0")
+  implementation("com.github.Sermilion.readability4k:readability4k:0.1.4")
 }
 ```
 
