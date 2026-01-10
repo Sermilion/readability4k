@@ -3,9 +3,11 @@ package com.sermilion.readability4k
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import com.sermilion.readability4k.model.ArticleGrabberOptions
 import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.model.ReadabilityOptions
 import com.sermilion.readability4k.processor.ArticleGrabber
+import com.sermilion.readability4k.processor.CommentParser
 import com.sermilion.readability4k.processor.MetadataParser
 import com.sermilion.readability4k.processor.Postprocessor
 import com.sermilion.readability4k.processor.Preprocessor
@@ -13,6 +15,8 @@ import com.sermilion.readability4k.processor.ReadabilityArticleGrabber
 import com.sermilion.readability4k.processor.ReadabilityMetadataParser
 import com.sermilion.readability4k.processor.ReadabilityPostprocessor
 import com.sermilion.readability4k.processor.ReadabilityPreprocessor
+import com.sermilion.readability4k.processor.RedditCommentParser
+import com.sermilion.readability4k.transformer.UrlTransformer
 import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +82,8 @@ open class Readability4K {
 
   protected var postprocessor: Postprocessor
 
+  protected var commentParser: CommentParser?
+
   // for Java interoperability
   /**
    * Calls Readability(String, String, ReadabilityOptions) with default
@@ -95,13 +101,21 @@ open class Readability4K {
     metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
     articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
     postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
+    commentParser: CommentParser? = null,
   ) : this(
-    uri,
-    Ksoup.parse(
+    uri = applyUrlTransformers(uri, options.urlTransformers),
+    document = Ksoup.parse(
       html = html,
-      baseUri = uri,
+      baseUri = applyUrlTransformers(uri, options.urlTransformers),
     ),
-    options, logger, regExUtil, preprocessor, metadataParser, articleGrabber, postprocessor,
+    options = options,
+    logger = logger,
+    regExUtil = regExUtil,
+    preprocessor = preprocessor,
+    metadataParser = metadataParser,
+    articleGrabber = articleGrabber,
+    postprocessor = postprocessor,
+    commentParser = commentParser ?: detectCommentParser(applyUrlTransformers(uri, options.urlTransformers)),
   )
 
   // for Java interoperability
@@ -121,6 +135,7 @@ open class Readability4K {
     metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
     articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
     postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
+    commentParser: CommentParser? = null,
   ) {
     this.uri = uri
     this.document = document
@@ -132,6 +147,7 @@ open class Readability4K {
     this.metadataParser = metadataParser
     this.articleGrabber = articleGrabber
     this.postprocessor = postprocessor
+    this.commentParser = commentParser
   }
 
   /**
@@ -166,9 +182,27 @@ open class Readability4K {
 
     val metadata = metadataParser.getArticleMetadata(document, options.disableJSONLD)
 
-    preprocessor.prepareDocument(document)
+    val comments = commentParser?.parseComments(document).orEmpty()
 
-    val articleContent = articleGrabber.grabArticle(document, metadata)
+    val isOldRedditPage = document.select("div.thing[data-type=link]").isNotEmpty()
+    val isCommentPage = uri.contains("/comments/")
+    val parser = commentParser
+
+    val grabberOptions = ArticleGrabberOptions(
+      preserveImages = options.preserveImages,
+      preserveVideos = options.preserveVideos,
+    )
+
+    val articleContent = if (isOldRedditPage && isCommentPage && parser is RedditCommentParser) {
+      val postContent = parser.extractPostContent(document)
+      postContent ?: run {
+        preprocessor.prepareDocument(document)
+        articleGrabber.grabArticle(document, metadata, grabberOptions)
+      }
+    } else {
+      preprocessor.prepareDocument(document)
+      articleGrabber.grabArticle(document, metadata, grabberOptions)
+    }
     logger.debug("Grabbed: $articleContent")
 
     articleContent?.let {
@@ -179,6 +213,13 @@ open class Readability4K {
         options.additionalClassesToPreserve,
         options.keepClasses,
       )
+
+      if (comments.isNotEmpty() && parser is RedditCommentParser) {
+        val commentsHtml = parser.renderCommentsAsHtml(comments)
+        if (commentsHtml.isNotEmpty()) {
+          articleContent.append(commentsHtml)
+        }
+      }
     }
 
     val finalMetadata = buildArticleMetadata(metadata, articleContent)
@@ -198,6 +239,7 @@ open class Readability4K {
       lang = articleGrabber.articleLang,
       siteName = finalMetadata.siteName,
       publishedTime = finalMetadata.publishedTime,
+      comments = comments,
       serializedContent = serializedContent,
     )
   }
@@ -255,5 +297,22 @@ open class Readability4K {
       siteName = metadata.siteName,
       publishedTime = metadata.publishedTime,
     )
+  }
+
+  companion object {
+    internal fun applyUrlTransformers(url: String, transformers: List<UrlTransformer>): String {
+      var result = url
+      transformers.sortedByDescending { it.priority }.forEach { transformer ->
+        result = transformer.transform(result)
+      }
+      return result
+    }
+
+    internal fun detectCommentParser(url: String): CommentParser? {
+      return when {
+        url.contains("reddit.com") -> RedditCommentParser()
+        else -> null
+      }
+    }
   }
 }

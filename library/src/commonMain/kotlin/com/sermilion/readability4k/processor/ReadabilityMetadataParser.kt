@@ -7,6 +7,19 @@ import com.sermilion.readability4k.util.RegExUtil
 
 open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil()) : ProcessorBase(), MetadataParser {
 
+  private companion object {
+    private const val H1_TITLE_SIMILARITY_THRESHOLD = 0.6
+
+    private val GENERIC_TITLE_PATTERNS = listOf(
+      "reddit.*the heart of the internet",
+      "untitled",
+      "no title",
+      "404.*not found",
+      "error.*page",
+      "page not found",
+    )
+  }
+
   @Suppress("CyclomaticComplexMethod")
   override fun getArticleMetadata(document: Document, disableJSONLD: Boolean): ArticleMetadata {
     val values = HashMap<String, String>()
@@ -113,22 +126,38 @@ open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil(
       // Title extraction is not critical, continue with empty title if it fails
     }
 
+    val isOriginalTitleGeneric = isGenericTitle(origTitle)
+
     val titleProcessingResult = processTitleSeparators(curTitle, origTitle, doc)
     curTitle = titleProcessingResult.first
     val titleHadHierarchicalSeparators = titleProcessingResult.second
+    var titleWasModified = titleProcessingResult.third
 
     curTitle = curTitle.trim()
     val curTitleWordCount = wordCount(curTitle)
     if (shouldUseOriginalTitle(curTitleWordCount, titleHadHierarchicalSeparators, origTitle)) {
       curTitle = origTitle
+      titleWasModified = false
+    }
+
+    val isCurrentTitleGeneric = isGenericTitle(curTitle)
+
+    val h1Title = getSingleH1Title(doc, curTitle, titleWasModified, isOriginalTitleGeneric || isCurrentTitleGeneric)
+    if (h1Title != null) {
+      curTitle = h1Title
     }
 
     return curTitle
   }
 
-  private fun processTitleSeparators(curTitle: String, origTitle: String, doc: Document): Pair<String, Boolean> {
+  private fun processTitleSeparators(
+    curTitle: String,
+    origTitle: String,
+    doc: Document,
+  ): Triple<String, Boolean, Boolean> {
     var processedTitle = curTitle
     var hadHierarchicalSeparators = false
+    var wasModified = false
 
     if (curTitle.contains(" [|\\-/>»] ".toRegex())) {
       hadHierarchicalSeparators = curTitle.contains(" [/>»] ".toRegex())
@@ -141,6 +170,7 @@ open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil(
           "$1",
         )
       }
+      wasModified = true
     } else if (curTitle.contains(": ")) {
       val match = doc.select("h1, h2").any { it.wholeText() == curTitle }
 
@@ -149,19 +179,21 @@ open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil(
 
         if (wordCount(processedTitle) < 3) {
           processedTitle = origTitle.substring(origTitle.indexOf(':') + 1)
-        } else if (wordCount(origTitle.substring(0, origTitle.indexOf(':'))) > 5) {
+        } else if (wordCount(origTitle.take(origTitle.indexOf(':'))) > 5) {
           processedTitle = origTitle
         }
+        wasModified = true
       }
-    } else if (curTitle.length > 150 || curTitle.length < 15) {
+    } else if (curTitle.length !in 15..150) {
       val hOnes = doc.getElementsByTag("h1")
 
       if (hOnes.size == 1) {
         processedTitle = getInnerText(hOnes[0], regEx)
+        wasModified = true
       }
     }
 
-    return Pair(processedTitle, hadHierarchicalSeparators)
+    return Triple(processedTitle, hadHierarchicalSeparators, wasModified)
   }
 
   private fun shouldUseOriginalTitle(
@@ -173,6 +205,51 @@ open class ReadabilityMetadataParser(protected val regEx: RegExUtil = RegExUtil(
       !titleHadHierarchicalSeparators ||
         curTitleWordCount != wordCount(origTitle.replace("[|\\-/>»]+".toRegex(), "")) - 1
       )
+
+  private fun getSingleH1Title(
+    doc: Document,
+    currentTitle: String,
+    titleHadSeparators: Boolean,
+    isGenericTitle: Boolean,
+  ): String? {
+    if (!titleHadSeparators && !isGenericTitle) {
+      return null
+    }
+
+    val h1Elements = doc.getElementsByTag("h1")
+    if (h1Elements.size != 1) {
+      return null
+    }
+
+    val h1Text = getInnerText(h1Elements[0], regEx).trim()
+    if (h1Text.isBlank()) {
+      return null
+    }
+
+    val h1WordCount = wordCount(h1Text)
+    if (h1WordCount < 3) {
+      return null
+    }
+
+    val similarity = HtmlUtil.textSimilarity(h1Text, currentTitle)
+    if (similarity > H1_TITLE_SIMILARITY_THRESHOLD) {
+      return null
+    }
+
+    return h1Text
+  }
+
+  private fun isGenericTitle(title: String): Boolean {
+    if (title.isBlank()) {
+      return false
+    }
+
+    val normalized = title.lowercase().trim()
+
+    return GENERIC_TITLE_PATTERNS.any { pattern ->
+      Regex(pattern, RegexOption.IGNORE_CASE).matches(normalized)
+    }
+  }
 
   protected open fun wordCount(str: String): Int = str.split("\\s+".toRegex()).size
 

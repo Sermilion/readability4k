@@ -14,6 +14,7 @@ import com.sermilion.readability4k.util.Logger
 import com.sermilion.readability4k.util.RegExUtil
 import kotlin.math.floor
 
+@Suppress("TooManyFunctions")
 open class ReadabilityArticleGrabber(
   options: ReadabilityOptions,
   protected val regEx: RegExUtil = RegExUtil(),
@@ -359,12 +360,10 @@ open class ReadabilityArticleGrabber(
         // - grandparent:        2
         // - great grandparent+: ancestor level * 3
         val scoreDivider =
-          if (level == 0) {
-            1
-          } else if (level == 1) {
-            2
-          } else {
-            level * 3
+          when (level) {
+            0 -> 1
+            1 -> 2
+            else -> level * 3
           }
 
         getReadabilityObject(ancestor)?.let { readability ->
@@ -382,51 +381,60 @@ open class ReadabilityArticleGrabber(
    */
   protected open fun initializeNode(node: Element, options: ArticleGrabberOptions): ReadabilityObject {
     val readability = ReadabilityObject(0.0)
-    readabilityObjects.put(node, readability)
+    readabilityObjects[node] = readability
 
-    when (node.tagName()) {
-      "div" ->
-        readability.contentScore += 5
-
-      "pre",
-      "td",
-      "blockquote",
-      ->
-        readability.contentScore += 3
-
-      "address",
-      "ol",
-      "ul",
-      "dl",
-      "dd",
-      "dt",
-      "li",
-      "form",
-      ->
-        readability.contentScore -= 3
-
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "th",
-      ->
-        readability.contentScore -= 5
-    }
-
+    readability.contentScore += getTagScore(node.tagName())
     readability.contentScore += getClassWeight(node, options)
+    readability.contentScore += getMediaBonus(node, options)
 
     return readability
   }
+
+  private fun getTagScore(tagName: String): Int = when (tagName) {
+    "div" -> TAG_SCORE_DIV
+    "pre", "td", "blockquote" -> TAG_SCORE_CONTENT
+    "address", "ol", "ul", "dl", "dd", "dt", "li", "form" -> TAG_SCORE_LIST_PENALTY
+    "h1", "h2", "h3", "h4", "h5", "h6", "th" -> TAG_SCORE_HEADER_PENALTY
+    else -> 0
+  }
+
+  private fun getMediaBonus(node: Element, options: ArticleGrabberOptions): Int {
+    if (!options.preserveImages && !options.preserveVideos) return 0
+    if (isLikelyNonContentContainer(node)) return 0
+
+    val imageCount = if (options.preserveImages) node.getElementsByTag("img").size else 0
+    val videoCount = if (options.preserveVideos) countVideoElements(node) else 0
+
+    val textLength = getInnerText(node, regEx).length
+    val hasReasonableRatio = imageCount == 0 || (textLength / imageCount.toDouble()) > 50
+
+    return if (hasReasonableRatio) {
+      (imageCount * 3) + (videoCount * 5)
+    } else {
+      0
+    }
+  }
+
+  private fun isLikelyNonContentContainer(node: Element): Boolean {
+    val matchString = node.className() + " " + node.id()
+    return regEx.isNegative(matchString) ||
+      matchString.contains("sidebar", ignoreCase = true) ||
+      matchString.contains("related", ignoreCase = true) ||
+      matchString.contains("recommend", ignoreCase = true) ||
+      matchString.contains("widget", ignoreCase = true) ||
+      matchString.contains("promo", ignoreCase = true)
+  }
+
+  private fun countVideoElements(node: Element): Int = node.getElementsByTag("iframe").size +
+    node.getElementsByTag("video").size +
+    node.getElementsByTag("embed").size
 
   /**
    * Get an elements class/id weight. Uses regular expressions to tell if this
    * element looks good or bad.
    */
   protected open fun getClassWeight(e: Element, options: ArticleGrabberOptions): Int {
-    if (options.weightClasses == false) {
+    if (!options.weightClasses) {
       return 0
     }
 
@@ -505,7 +513,7 @@ open class ReadabilityArticleGrabber(
 
         logger.debug("Candidate: $candidate with score $candidateScore")
 
-        for (t in 0..nbTopCandidates - 1) {
+        for (t in 0..<nbTopCandidates) {
           val aTopCandidate = if (topCandidates.size > t) topCandidates[t] else null
           val topCandidateReadability =
             if (aTopCandidate != null) getReadabilityObject(aTopCandidate) else null
@@ -679,73 +687,173 @@ open class ReadabilityArticleGrabber(
       articleContent.attr("id", "readability-content")
     }
 
-    val topCandidateReadability = getReadabilityObject(topCandidate)
-    if (topCandidateReadability == null) {
-      return articleContent
-    }
+    val topCandidateReadability = getReadabilityObject(topCandidate) ?: return articleContent
 
     val siblingScoreThreshold = maxOf(10.0, topCandidateReadability.contentScore * 0.2)
-    // Keep potential top candidate's parent node to try to get text direction of it later.
-    val parentOfTopCandidate =
-      topCandidate.parent() // parentOfTopCandidate may is null, see issue #12
+    val parentOfTopCandidate = topCandidate.parent()
     val siblings = parentOfTopCandidate?.children() ?: Elements()
 
-    ArrayList(siblings).forEach { sibling ->
-      // make a copy of children as the may get
-      // modified below -> we can get rid of s -= 1 sl -= 1 compared to original source
-      var append = false
+    val siblingCandidates = collectSiblingCandidates(parentOfTopCandidate, siblings)
 
-      val siblingReadability = getReadabilityObject(sibling)
-      logger.debug(
-        "Looking at sibling node: $sibling with score ${siblingReadability?.contentScore ?: 0}",
-      )
-      logger.debug("Sibling has score ${siblingReadability?.contentScore?.toString() ?: "Unknown"}")
-
-      if (sibling == topCandidate) {
-        append = true
-      } else {
-        var contentBonus = 0.0
-
-        // Give a bonus if sibling nodes and top candidates have the example same classname
-        if (sibling.className() == topCandidate.className() && topCandidate.className() != "") {
-          contentBonus += topCandidateReadability.contentScore * 0.2
-        }
-
-        if (siblingReadability != null &&
-          ((siblingReadability.contentScore + contentBonus) >= siblingScoreThreshold)
-        ) {
-          append = true
-        } else if (shouldKeepSibling(sibling)) {
-          val linkDensity = this.getLinkDensity(sibling)
-          val nodeContent = this.getInnerText(sibling, regEx)
-          val nodeLength = nodeContent.length
-
-          if (nodeLength > 80 && linkDensity < 0.25 + linkDensityModifier) {
-            append = true
-          } else if (nodeLength < 80 &&
-            nodeLength > 0 &&
-            linkDensity == 0.0 &&
-            nodeContent.contains("\\.( |$)".toRegex())
-          ) {
-            append = true
-          }
-        }
-      }
-
-      if (append) {
-        logger.debug("Appending node: $sibling")
-
-        if (ALTER_TO_DIV_EXCEPTIONS.contains(sibling.tagName()) == false) {
-          logger.debug("Altering sibling: $sibling to div.")
-
-          setNodeTag(sibling, "div")
-        }
-
-        articleContent.appendChild(sibling)
+    val elementsToAppend = ArrayList<Element>()
+    ArrayList(siblingCandidates).forEach { sibling ->
+      if (shouldAppendSibling(
+          sibling,
+          topCandidate,
+          topCandidateReadability,
+          siblingScoreThreshold,
+        )
+      ) {
+        logger.debug("Will append node: $sibling")
+        elementsToAppend.add(sibling)
       }
     }
 
+    sortElementsByDocumentOrder(elementsToAppend)
+    appendElementsToArticle(elementsToAppend, articleContent)
+
     return articleContent
+  }
+
+  private fun collectSiblingCandidates(parentOfTopCandidate: Element?, siblings: Elements): ArrayList<Element> {
+    val siblingCandidates = ArrayList<Element>()
+    siblingCandidates.addAll(siblings)
+
+    val grandparent = parentOfTopCandidate?.parent() ?: return siblingCandidates
+    if (grandparent.tagName() == "body") {
+      return siblingCandidates
+    }
+
+    val parentClasses = parentOfTopCandidate.className().split(" ").filter { it.isNotEmpty() }
+    addCousinCandidates(grandparent, parentOfTopCandidate, parentClasses, siblingCandidates)
+
+    return siblingCandidates
+  }
+
+  private fun addCousinCandidates(
+    grandparent: Element,
+    parentOfTopCandidate: Element,
+    parentClasses: List<String>,
+    siblingCandidates: ArrayList<Element>,
+  ) {
+    grandparent.children().forEach { uncle ->
+      if (uncle == parentOfTopCandidate) {
+        return@forEach
+      }
+
+      val uncleClasses = uncle.className().split(" ").filter { it.isNotEmpty() }
+      val hasCommonClass = parentClasses.isNotEmpty() &&
+        parentClasses.any { pc -> uncleClasses.contains(pc) }
+
+      if (hasCommonClass) {
+        siblingCandidates.addAll(uncle.children())
+      }
+    }
+  }
+
+  private fun shouldAppendSibling(
+    sibling: Element,
+    topCandidate: Element,
+    topCandidateReadability: ReadabilityObject,
+    siblingScoreThreshold: Double,
+  ): Boolean {
+    val siblingReadability = getReadabilityObject(sibling)
+    logger.debug(
+      "Looking at sibling node: $sibling with score ${siblingReadability?.contentScore ?: 0}",
+    )
+    logger.debug("Sibling has score ${siblingReadability?.contentScore?.toString() ?: "Unknown"}")
+
+    if (sibling == topCandidate) {
+      return true
+    }
+
+    val contentBonus = calculateContentBonus(sibling, topCandidate, topCandidateReadability)
+
+    return when {
+      isIntroSectionWithContent(sibling) -> true
+      hasHighEnoughScore(siblingReadability, contentBonus, siblingScoreThreshold) -> true
+      shouldKeepSiblingBasedOnContent(sibling) -> true
+      else -> false
+    }
+  }
+
+  private fun calculateContentBonus(
+    sibling: Element,
+    topCandidate: Element,
+    topCandidateReadability: ReadabilityObject,
+  ): Double {
+    return if (sibling.className() == topCandidate.className() && topCandidate.className() != "") {
+      topCandidateReadability.contentScore * 0.2
+    } else {
+      0.0
+    }
+  }
+
+  private fun isIntroSectionWithContent(sibling: Element): Boolean {
+    val isIntroSection = sibling.className().contains("intro") || sibling.tagName() == "header"
+    return isIntroSection && this.getInnerText(sibling, regEx).length > 50
+  }
+
+  private fun hasHighEnoughScore(
+    siblingReadability: ReadabilityObject?,
+    contentBonus: Double,
+    siblingScoreThreshold: Double,
+  ): Boolean {
+    return siblingReadability != null &&
+      ((siblingReadability.contentScore + contentBonus) >= siblingScoreThreshold)
+  }
+
+  private fun shouldKeepSiblingBasedOnContent(sibling: Element): Boolean {
+    if (!shouldKeepSibling(sibling)) {
+      return false
+    }
+
+    val linkDensity = this.getLinkDensity(sibling)
+    val nodeContent = this.getInnerText(sibling, regEx)
+    val nodeLength = nodeContent.length
+
+    return when {
+      nodeLength > 80 && linkDensity < 0.25 + linkDensityModifier -> true
+      nodeLength in 1..<80 && linkDensity == 0.0 && nodeContent.contains("\\.( |$)".toRegex()) -> true
+      else -> false
+    }
+  }
+
+  private fun sortElementsByDocumentOrder(elements: ArrayList<Element>) {
+    elements.sortWith { a, b ->
+      val pathA = mutableListOf<Int>()
+      var current: Element? = a
+      while (current != null) {
+        pathA.add(0, current.siblingIndex())
+        current = current.parent()
+      }
+
+      val pathB = mutableListOf<Int>()
+      current = b
+      while (current != null) {
+        pathB.add(0, current.siblingIndex())
+        current = current.parent()
+      }
+
+      for (i in 0 until minOf(pathA.size, pathB.size)) {
+        val cmp = pathA[i].compareTo(pathB[i])
+        if (cmp != 0) return@sortWith cmp
+      }
+      pathA.size.compareTo(pathB.size)
+    }
+  }
+
+  private fun appendElementsToArticle(elementsToAppend: ArrayList<Element>, articleContent: Element) {
+    elementsToAppend.forEach { element ->
+      logger.debug("Appending node in document order: $element")
+
+      if (!ALTER_TO_DIV_EXCEPTIONS.contains(element.tagName())) {
+        logger.debug("Altering sibling: $element to div.")
+        setNodeTag(element, "div")
+      }
+
+      articleContent.appendChild(element)
+    }
   }
 
   protected open fun shouldKeepSibling(sibling: Element): Boolean = sibling.tagName() == "p"
@@ -788,8 +896,22 @@ open class ReadabilityArticleGrabber(
       headerDuplicatesTitle(h2, metadata)
     }
 
-    this.clean(articleContent, "iframe")
+    if (!options.preserveVideos) {
+      this.clean(articleContent, "iframe")
+    }
     this.clean(articleContent, "input")
+
+    removeNodes(articleContent, "figure") { figure ->
+      val images = figure.select("img")
+      images.isEmpty()
+    }
+
+    removeNodes(articleContent, "div") { div ->
+      val text = div.text().trim()
+      val hasChildren = div.children().isNotEmpty()
+      text.isEmpty() && !hasChildren
+    }
+
     this.clean(articleContent, "textarea")
     this.clean(articleContent, "select")
     this.clean(articleContent, "button")
@@ -935,7 +1057,7 @@ open class ReadabilityArticleGrabber(
 
   @Suppress("CyclomaticComplexMethod")
   protected open fun cleanConditionally(e: Element, tag: String, options: ArticleGrabberOptions) {
-    if (options.cleanConditionally == false) {
+    if (!options.cleanConditionally) {
       return
     }
 
@@ -976,7 +1098,7 @@ open class ReadabilityArticleGrabber(
 
         var embedCount = 0
         node.getElementsByTag("embed").forEach {
-          if (isVideoContent(it.attr("src")) == false) {
+          if (!isVideoContent(it.attr("src"))) {
             embedCount += 1
           }
         }
@@ -984,14 +1106,26 @@ open class ReadabilityArticleGrabber(
         val linkDensity = getLinkDensity(node)
         val contentLength = getInnerText(node, regEx).length
 
+        val imageCheck = if (options.preserveImages) {
+          false
+        } else {
+          (img > 1 && p / img.toFloat() < 0.5 && !hasAncestorTag(node, "figure"))
+        }
+
+        val embedCheck = if (options.preserveVideos) {
+          false
+        } else {
+          ((embedCount == 1 && contentLength < 75) || embedCount > 1)
+        }
+
         val haveToRemove =
-          (img > 1 && p / img.toFloat() < 0.5 && !hasAncestorTag(node, "figure")) ||
+          imageCheck ||
             (!isList && li > p) ||
             (input > floor(p / 3.0)) ||
             (!isList && contentLength < 25 && img == 0 && !hasAncestorTag(node, "figure")) ||
             (!isList && weight < 25 && linkDensity > 0.2 + linkDensityModifier) ||
             (weight >= 25 && linkDensity > 0.5 + linkDensityModifier) ||
-            ((embedCount == 1 && contentLength < 75) || embedCount > 1)
+            embedCheck
         return@removeNodes haveToRemove
       }
 
@@ -1014,7 +1148,7 @@ open class ReadabilityArticleGrabber(
     var depth = 0
 
     while (parent.parent() != null) {
-      if (maxDepth > 0 && depth > maxDepth) {
+      if (maxDepth in 1..<depth) {
         return false
       }
 
@@ -1073,10 +1207,10 @@ open class ReadabilityArticleGrabber(
     var next = getNextNode(e)
 
     while (next != null && next != endOfSearchMarkerNode) {
-      if (regex.containsMatchIn(next.className() + " " + next.id())) {
-        next = removeAndGetNext(next, regex.pattern)
+      next = if (regex.containsMatchIn(next.className() + " " + next.id())) {
+        removeAndGetNext(next, regex.pattern)
       } else {
-        next = getNextNode(next)
+        getNextNode(next)
       }
     }
   }
@@ -1128,7 +1262,7 @@ open class ReadabilityArticleGrabber(
   }
 
   protected open fun getTextDirection(topCandidate: Element, doc: Document) {
-    val ancestors = mutableSetOf<Element?>(topCandidate.parent(), topCandidate)
+    val ancestors = mutableSetOf(topCandidate.parent(), topCandidate)
     topCandidate.parent()?.let { ancestors.addAll(getNodeAncestors(it)) }
     ancestors.add(doc.body())
     ancestors.add(doc.selectFirst("html"))
@@ -1174,7 +1308,7 @@ open class ReadabilityArticleGrabber(
   protected open fun getReadabilityDataTable(table: Element): Boolean = this.readabilityDataTable[table] ?: false
 
   protected open fun setReadabilityDataTable(table: Element, readabilityDataTable: Boolean) {
-    this.readabilityDataTable.put(table, readabilityDataTable)
+    this.readabilityDataTable[table] = readabilityDataTable
   }
 
   protected open fun shouldIncludeCandidate(candidate: Element): Boolean = candidateFilters.all { filter ->
@@ -1182,6 +1316,11 @@ open class ReadabilityArticleGrabber(
   }
 
   companion object {
+    const val TAG_SCORE_DIV = 5
+    const val TAG_SCORE_CONTENT = 3
+    const val TAG_SCORE_LIST_PENALTY = -3
+    const val TAG_SCORE_HEADER_PENALTY = -5
+
     val DEFAULT_TAGS_TO_SCORE = listOf("section", "h2", "h3", "h4", "h5", "h6", "p", "td", "pre")
 
     val DIV_TO_P_ELEMS =

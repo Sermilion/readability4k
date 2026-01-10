@@ -1,6 +1,7 @@
 package com.sermilion.readability4k
 
 import com.fleeksoft.ksoup.nodes.Element
+import com.sermilion.readability4k.model.Comment
 
 /**
  * Represents an article extracted from a web page.
@@ -20,6 +21,7 @@ import com.fleeksoft.ksoup.nodes.Element
  * @property lang Language of the article content (e.g., "en", "fr")
  * @property siteName Name of the website/publication
  * @property publishedTime Publication date/time of the article
+ * @property comments List of comments extracted from the page (if CommentParser was provided)
  */
 open class Article(
   val uri: String,
@@ -32,6 +34,7 @@ open class Article(
   val lang: String? = null,
   val siteName: String? = null,
   val publishedTime: String? = null,
+  val comments: List<Comment> = emptyList(),
   private val serializedContent: String? = null,
 ) {
 

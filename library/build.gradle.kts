@@ -87,7 +87,7 @@ tasks.named<Test>("jvmTest") {
 }
 
 group = "com.sermilion"
-version = "0.1.4"
+version = "0.1.5"
 
 val emptyJar by tasks.registering(Jar::class) {
     archiveAppendix.set("empty")
