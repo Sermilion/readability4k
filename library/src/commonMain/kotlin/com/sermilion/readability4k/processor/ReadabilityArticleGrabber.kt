@@ -816,6 +816,10 @@ open class ReadabilityArticleGrabber(
       return true
     }
 
+    if (isFeaturedImageFigure(sibling, topCandidate)) {
+      return true
+    }
+
     val contentBonus = calculateContentBonus(sibling, topCandidate, topCandidateReadability)
 
     return when {
@@ -824,6 +828,30 @@ open class ReadabilityArticleGrabber(
       shouldKeepSiblingBasedOnContent(sibling) -> true
       else -> false
     }
+  }
+
+  private fun isFeaturedImageFigure(sibling: Element, topCandidate: Element): Boolean {
+    if (sibling.tagName() != "figure") return false
+
+    val images = sibling.getElementsByTag("img")
+    if (images.isEmpty()) return false
+
+    val siblingIndex = sibling.siblingIndex()
+    val topCandidateIndex = topCandidate.siblingIndex()
+    val appearsBeforeContent = siblingIndex < topCandidateIndex
+
+    val hasValidImage = images.any { img ->
+      val src = img.attr("src")
+      val width = img.attr("width").toIntOrNull() ?: 0
+      val height = img.attr("height").toIntOrNull() ?: 0
+
+      src.isNotBlank() &&
+      !src.contains("data:image") &&
+      (width == 0 || width >= 200) &&
+      (height == 0 || height >= 150)
+    }
+
+    return appearsBeforeContent && hasValidImage
   }
 
   private fun calculateContentBonus(
@@ -1132,7 +1160,13 @@ open class ReadabilityArticleGrabber(
 
       logger.debug("Cleaning Conditionally $node")
 
+      val hasFigureAncestor = hasAncestorTag(node, "figure")
+      val hasImages = node.getElementsByTag("img").size > 0
+
       if (weight + contentScore < 0) {
+        if (hasFigureAncestor && hasImages) {
+          return@removeNodes false
+        }
         return@removeNodes true
       }
 
@@ -1375,7 +1409,7 @@ open class ReadabilityArticleGrabber(
     val DIV_TO_P_ELEMS =
       listOf("a", "blockquote", "dl", "div", "img", "ol", "p", "pre", "table", "ul", "select")
 
-    val ALTER_TO_DIV_EXCEPTIONS = listOf("div", "article", "section", "p")
+    val ALTER_TO_DIV_EXCEPTIONS = listOf("div", "article", "section", "p", "figure")
 
     val PRESENTATIONAL_ATTRIBUTES = listOf(
       "align",

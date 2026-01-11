@@ -39,6 +39,7 @@ open class ReadabilityPreprocessor(
     replaceNodes(document, "font", "span")
 
     fixLazyImages(document)
+    fixNextJsImages(document)
   }
 
   protected open fun removeScripts(document: Document) {
@@ -214,6 +215,108 @@ open class ReadabilityPreprocessor(
         }
       }
     }
+  }
+
+  protected open fun fixNextJsImages(document: Document) {
+    val images = document.select("img")
+    logger.debug("[NextJS] Found ${images.size} img tags to process")
+
+    images.forEach { img ->
+      val src = img.attr("src")
+      val srcset = img.attr("srcset")
+
+      if (src.isNotBlank()) {
+        logger.debug("[NextJS] Processing src: $src")
+        val extractedUrl = extractRealImageUrl(src)
+        if (extractedUrl != null) {
+          logger.debug("[NextJS] Extracted URL: $extractedUrl")
+          img.attr("src", extractedUrl)
+          logger.debug("[NextJS] Updated src attribute")
+        } else {
+          logger.debug("[NextJS] No Next.js pattern found in src")
+        }
+      }
+
+      if (srcset.isNotBlank()) {
+        logger.debug("[NextJS] Processing srcset: ${srcset.take(100)}...")
+        val fixedSrcset = fixNextJsSrcset(srcset)
+        if (fixedSrcset != srcset) {
+          logger.debug("[NextJS] Fixed srcset")
+          img.attr("srcset", fixedSrcset)
+        }
+      }
+    }
+    logger.debug("[NextJS] Completed processing images")
+  }
+
+  protected open fun extractRealImageUrl(url: String): String? {
+    val nextJsPattern = Regex("/_next/image\\?url=([^&]+)")
+    val match = nextJsPattern.find(url)
+
+    if (match == null) {
+      return null
+    }
+
+    val encodedUrl = match.groupValues[1]
+    logger.debug("[NextJS] Encoded URL: $encodedUrl")
+
+    return try {
+      val decoded = decodeUrl(encodedUrl)
+      logger.debug("[NextJS] Decoded URL: $decoded")
+      decoded
+    } catch (e: Exception) {
+      logger.debug("[NextJS] Failed to decode: $encodedUrl - ${e.message}")
+      null
+    }
+  }
+
+  protected open fun fixNextJsSrcset(srcset: String): String {
+    val entries = srcset.split(",").map { it.trim() }
+    val fixedEntries = entries.map { entry ->
+      val parts = entry.split(Regex("\\s+"))
+      if (parts.isEmpty()) return@map entry
+
+      val url = parts[0]
+      val descriptor = parts.drop(1).joinToString(" ")
+
+      val extractedUrl = extractRealImageUrl(url)
+      if (extractedUrl != null) {
+        if (descriptor.isNotBlank()) {
+          "$extractedUrl $descriptor"
+        } else {
+          extractedUrl
+        }
+      } else {
+        entry
+      }
+    }
+    return fixedEntries.joinToString(", ")
+  }
+
+  protected open fun decodeUrl(encodedUrl: String): String {
+    var decoded = encodedUrl
+    decoded = decoded.replace("%3A", ":")
+    decoded = decoded.replace("%2F", "/")
+    decoded = decoded.replace("%3F", "?")
+    decoded = decoded.replace("%3D", "=")
+    decoded = decoded.replace("%26", "&")
+    decoded = decoded.replace("%2B", "+")
+    decoded = decoded.replace("%20", " ")
+    decoded = decoded.replace("%23", "#")
+    decoded = decoded.replace("%25", "%")
+    decoded = decoded.replace("%2C", ",")
+    decoded = decoded.replace("%40", "@")
+    decoded = decoded.replace("%21", "!")
+    decoded = decoded.replace("%24", "$")
+    decoded = decoded.replace("%27", "'")
+    decoded = decoded.replace("%28", "(")
+    decoded = decoded.replace("%29", ")")
+    decoded = decoded.replace("%2A", "*")
+    decoded = decoded.replace("%2D", "-")
+    decoded = decoded.replace("%2E", ".")
+    decoded = decoded.replace("%5F", "_")
+    decoded = decoded.replace("%7E", "~")
+    return decoded
   }
 
   @Suppress("CyclomaticComplexMethod", "NestedBlockDepth")
