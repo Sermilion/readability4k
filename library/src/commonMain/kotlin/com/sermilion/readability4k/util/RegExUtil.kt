@@ -4,9 +4,10 @@ open class RegExUtil {
 
   companion object {
     const val UNLIKELY_CANDIDATES_DEFAULT_PATTERN =
-      "banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|" +
+      "banner|breadcrumb|breadcrumbs|ui-bc|combx|comment|community|cover-wrap|disqus|extra|" +
         "foot|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|" +
-        "sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote"
+        "sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote|" +
+        "timestamp|time-ago|publish-time|post-time"
 
     const val OK_MAYBE_ITS_A_CANDIDATE_DEFAULT_PATTERN = "and|article|body|column|main|shadow"
 

@@ -736,19 +736,68 @@ open class ReadabilityArticleGrabber(
     parentClasses: List<String>,
     siblingCandidates: ArrayList<Element>,
   ) {
+    val semanticParentClasses = filterSemanticClasses(parentClasses)
+    if (semanticParentClasses.isEmpty()) {
+      logger.debug("No semantic classes found, skipping cousin candidates")
+      return
+    }
+
     grandparent.children().forEach { uncle ->
-      if (uncle == parentOfTopCandidate) {
-        return@forEach
-      }
-
-      val uncleClasses = uncle.className().split(" ").filter { it.isNotEmpty() }
-      val hasCommonClass = parentClasses.isNotEmpty() &&
-        parentClasses.any { pc -> uncleClasses.contains(pc) }
-
-      if (hasCommonClass) {
-        siblingCandidates.addAll(uncle.children())
+      if (uncle != parentOfTopCandidate) {
+        processUncleElement(uncle, semanticParentClasses, siblingCandidates)
       }
     }
+  }
+
+  private fun filterSemanticClasses(parentClasses: List<String>): List<String> {
+    val utilityPrefixes = listOf(
+      "flex",
+      "grid",
+      "text",
+      "bg",
+      "p-",
+      "m-",
+      "w-",
+      "h-",
+      "max",
+      "min",
+      "rounded",
+      "border",
+      "shadow",
+      "prose",
+    )
+    return parentClasses.filter { className ->
+      !utilityPrefixes.any { prefix -> className.startsWith(prefix) } && className.length > 3
+    }
+  }
+
+  private fun processUncleElement(
+    uncle: Element,
+    semanticParentClasses: List<String>,
+    siblingCandidates: ArrayList<Element>,
+  ) {
+    val uncleClasses = uncle.className().split(" ").filter { it.isNotEmpty() }
+    val hasCommonSemanticClass = semanticParentClasses.any { pc -> uncleClasses.contains(pc) }
+
+    if (hasCommonSemanticClass) {
+      addValidCousinCandidates(uncle, siblingCandidates)
+    }
+  }
+
+  private fun addValidCousinCandidates(uncle: Element, siblingCandidates: ArrayList<Element>) {
+    uncle.children().forEach { cousin ->
+      if (isValidCousinCandidate(cousin)) {
+        siblingCandidates.add(cousin)
+        logger.debug("Adding cousin candidate: $cousin")
+      } else {
+        logger.debug("Skipping unlikely cousin: ${cousin.className()} ${cousin.id()}")
+      }
+    }
+  }
+
+  private fun isValidCousinCandidate(cousin: Element): Boolean {
+    val matchString = cousin.className() + " " + cousin.id()
+    return !regEx.isUnlikelyCandidate(matchString) || regEx.okMaybeItsACandidate(matchString)
   }
 
   private fun shouldAppendSibling(

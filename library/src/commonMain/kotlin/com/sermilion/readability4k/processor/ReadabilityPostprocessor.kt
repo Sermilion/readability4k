@@ -20,10 +20,10 @@ open class ReadabilityPostprocessor(protected val logger: Logger = Logger.NONE) 
     additionalClassesToPreserve: Collection<String>,
     keepClasses: Boolean,
   ) {
-    // Readability cannot open relative uris so we convert them to absolute uris.
     fixRelativeUris(originalDocument, articleContent, articleUri)
 
-    // Remove IDs and classes unless keepClasses is enabled.
+    removeMetadataElements(articleContent)
+
     if (!keepClasses) {
       val classesToPreserve = listOf(
         CLASSES_TO_PRESERVE,
@@ -31,6 +31,76 @@ open class ReadabilityPostprocessor(protected val logger: Logger = Logger.NONE) 
       ).flatten().toSet()
       cleanClasses(articleContent, classesToPreserve)
     }
+  }
+
+  protected open fun removeMetadataElements(articleContent: Element) {
+    removeBreadcrumbNavigation(articleContent)
+    removeMetadataTextElements(articleContent)
+  }
+
+  private fun removeBreadcrumbNavigation(articleContent: Element) {
+    articleContent.select("nav").forEach { nav ->
+      val classId = "${nav.className()} ${nav.id()}"
+      if (isBreadcrumbElement(classId)) {
+        logger.debug("Removing breadcrumb nav: $classId")
+        nav.remove()
+      }
+    }
+  }
+
+  private fun isBreadcrumbElement(classId: String): Boolean = classId.contains("breadcrumb", ignoreCase = true) ||
+    classId.contains("ui-bc", ignoreCase = true)
+
+  private fun removeMetadataTextElements(articleContent: Element) {
+    val timePattern =
+      Regex(
+        "\\d+\\s*(минут|час|день|week|month|year|ago|назад|янв|фев|мар|апр|май|июн|июл|авг|сен|окт|ноя|дек)",
+        RegexOption.IGNORE_CASE,
+      )
+    val sourcePattern = Regex("Источник:", RegexOption.IGNORE_CASE)
+    val categoryPattern = Regex("^(Новости|News)$", RegexOption.IGNORE_CASE)
+    val singleNumberPattern = Regex("^\\d+$")
+
+    articleContent.select("span, div").forEach { elem ->
+      val text = elem.ownText().trim()
+      if (shouldRemoveElement(text, timePattern, sourcePattern, categoryPattern, singleNumberPattern, elem)) {
+        logger.debug("Removing metadata element: $text")
+        elem.remove()
+      }
+    }
+  }
+
+  private fun shouldRemoveElement(
+    text: String,
+    timePattern: Regex,
+    sourcePattern: Regex,
+    categoryPattern: Regex,
+    singleNumberPattern: Regex,
+    elem: Element,
+  ): Boolean {
+    if (text.isEmpty() || text.length >= 100) return false
+
+    if (matchesMetadataPattern(text, timePattern, sourcePattern, categoryPattern)) {
+      return true
+    }
+
+    return isCommentCount(text, singleNumberPattern, elem)
+  }
+
+  private fun matchesMetadataPattern(
+    text: String,
+    timePattern: Regex,
+    sourcePattern: Regex,
+    categoryPattern: Regex,
+  ): Boolean = timePattern.containsMatchIn(text) ||
+    sourcePattern.containsMatchIn(text) ||
+    categoryPattern.matches(text)
+
+  private fun isCommentCount(text: String, singleNumberPattern: Regex, elem: Element): Boolean {
+    if (text.length > 3 || !singleNumberPattern.matches(text)) return false
+
+    val parent = elem.parent() ?: return false
+    return parent.hasClass("flex") || parent.hasClass("items-center")
   }
 
   /**

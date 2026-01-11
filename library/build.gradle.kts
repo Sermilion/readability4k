@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.kotest.framework.engine)
             implementation(libs.kotest.framework.datatest)
             implementation(kotlin("test"))
+            implementation(kotlin("reflect"))
         }
 
         androidUnitTest.dependencies {
@@ -87,7 +88,7 @@ tasks.named<Test>("jvmTest") {
 }
 
 group = "com.sermilion"
-version = "0.1.5"
+version = "0.1.6-SNAPSHOT"
 
 val emptyJar by tasks.registering(Jar::class) {
     archiveAppendix.set("empty")
