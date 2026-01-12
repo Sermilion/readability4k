@@ -10,7 +10,16 @@ open class ReadabilityPostprocessor(protected val logger: Logger = Logger.NONE) 
   companion object {
     val AbsoluteUriPattern = Regex("^[a-zA-Z][a-zA-Z0-9+\\-.]*:")
 
-    val CLASSES_TO_PRESERVE = listOf("readability-styled", "page")
+    val CLASSES_TO_PRESERVE = listOf(
+      "readability-styled",
+      "page",
+      "twitter-tweet",
+      "instagram-media",
+      "tiktok-embed",
+      "reddit-embed-bq",
+      "fb-post",
+      "fb-video",
+    )
   }
 
   override fun postProcessContent(
