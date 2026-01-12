@@ -1,7 +1,6 @@
 package com.sermilion.readability4k
 
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -122,7 +121,8 @@ class NextJsImagesTest : FunSpec({
     val article = readability.parse()
 
     article shouldNotBe null
-    article.content shouldContain "https://cms.interestingengineering.com/wp-content/uploads/2026/01/image-1920x1080-2026-01-11T174651.359.png"
+    article.content shouldContain
+      "https://cms.interestingengineering.com/wp-content/uploads/2026/01/image-1920x1080-2026-01-11T174651.359.png"
     article.content shouldNotContain "_next/image"
   }
 

@@ -846,9 +846,9 @@ open class ReadabilityArticleGrabber(
       val height = img.attr("height").toIntOrNull() ?: 0
 
       src.isNotBlank() &&
-      !src.contains("data:image") &&
-      (width == 0 || width >= 200) &&
-      (height == 0 || height >= 150)
+        !src.contains("data:image") &&
+        (width == 0 || width >= 200) &&
+        (height == 0 || height >= 150)
     }
 
     return appearsBeforeContent && hasValidImage
