@@ -15,6 +15,7 @@ dependencies {
   implementation(libs.ktor.clientCore)
   implementation(libs.ktor.clientCio)
   implementation(libs.kotlinx.coroutines.core)
+  testImplementation(kotlin("test-junit"))
 }
 
 tasks.named<JavaExec>("run") {

@@ -1,7 +1,6 @@
-package com.sermilion.readability4k
+package com.sermilion.readability4k.model
 
 import com.fleeksoft.ksoup.nodes.Element
-import com.sermilion.readability4k.model.Comment
 
 /**
  * Represents an article extracted from a web page.

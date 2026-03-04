@@ -29,7 +29,7 @@ Add the dependency:
 
 ```kotlin
 dependencies {
-  implementation("com.github.Sermilion.readability4k:readability4k:0.1.5")
+  implementation("com.github.Sermilion.readability4k:readability4k:0.2.0")
 }
 ```
 

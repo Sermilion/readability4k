@@ -1,7 +1,7 @@
 # Readability4K ProGuard Rules
 
 # Keep Article data class for serialization/reflection
--keep class com.sermilion.readability4k.Article { *; }
+-keep class com.sermilion.readability4k.model.Article { *; }
 
 # Keep exception classes for crash reporting and proper stack traces
 -keep class com.sermilion.readability4k.ReadabilityException { *; }
@@ -37,8 +37,8 @@
 -keepattributes *Annotation*
 
 # If using kotlinx.serialization (optional)
--if class com.sermilion.readability4k.Article
--keepclassmembers class com.sermilion.readability4k.Article {
+-if class com.sermilion.readability4k.model.Article
+-keepclassmembers class com.sermilion.readability4k.model.Article {
     kotlinx.serialization.KSerializer serializer(...);
 }
 

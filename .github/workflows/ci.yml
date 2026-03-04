@@ -16,12 +16,12 @@ on:
       - 'feat/R4K-**'
       - 'fix/R4K-**'
       - 'chore/R4K-**'
+      - 'main'
       - 'renovate/**'
 
 jobs:
   build:
     runs-on: self-hosted
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
 
     steps:
       - name: Checkout

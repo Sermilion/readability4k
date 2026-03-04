@@ -3,6 +3,7 @@ package com.sermilion.readability4k
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import com.sermilion.readability4k.model.Article
 import com.sermilion.readability4k.model.ArticleGrabberOptions
 import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.model.ReadabilityOptions
@@ -58,7 +59,7 @@ import kotlinx.coroutines.withContext
  * val readability = Readability4J(url, html, logger = logger)
  * ```
  *
- * @see Article
+ * @see com.sermilion.readability4k.model.Article
  * @see ReadabilityOptions
  * @see Logger
  */
@@ -84,6 +85,16 @@ open class Readability4K {
 
   protected var commentParser: CommentParser?
 
+  protected var sourceHtml: String
+
+  protected var rebuildDocumentPerParse: Boolean
+
+  private data class HtmlInitialization(
+    val uri: String,
+    val document: Document,
+    val commentParser: CommentParser?,
+  )
+
   // for Java interoperability
   /**
    * Calls Readability(String, String, ReadabilityOptions) with default
@@ -103,11 +114,7 @@ open class Readability4K {
     postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
     commentParser: CommentParser? = null,
   ) : this(
-    uri = applyUrlTransformers(uri, options.urlTransformers),
-    document = Ksoup.parse(
-      html = html,
-      baseUri = applyUrlTransformers(uri, options.urlTransformers),
-    ),
+    initialization = buildHtmlInitialization(uri, html, options, commentParser),
     options = options,
     logger = logger,
     regExUtil = regExUtil,
@@ -115,8 +122,32 @@ open class Readability4K {
     metadataParser = metadataParser,
     articleGrabber = articleGrabber,
     postprocessor = postprocessor,
-    commentParser = commentParser ?: detectCommentParser(applyUrlTransformers(uri, options.urlTransformers)),
   )
+
+  private constructor(
+    initialization: HtmlInitialization,
+    options: ReadabilityOptions,
+    logger: Logger,
+    regExUtil: RegExUtil,
+    preprocessor: Preprocessor,
+    metadataParser: MetadataParser,
+    articleGrabber: ArticleGrabber,
+    postprocessor: Postprocessor,
+  ) : this(
+    uri = initialization.uri,
+    document = initialization.document,
+    options = options,
+    logger = logger,
+    regExUtil = regExUtil,
+    preprocessor = preprocessor,
+    metadataParser = metadataParser,
+    articleGrabber = articleGrabber,
+    postprocessor = postprocessor,
+    commentParser = initialization.commentParser,
+  ) {
+    sourceHtml = initialization.document.html()
+    rebuildDocumentPerParse = true
+  }
 
   // for Java interoperability
   /**
@@ -148,6 +179,8 @@ open class Readability4K {
     this.articleGrabber = articleGrabber
     this.postprocessor = postprocessor
     this.commentParser = commentParser
+    this.sourceHtml = ""
+    this.rebuildDocumentPerParse = false
   }
 
   /**
@@ -164,27 +197,29 @@ open class Readability4K {
    * For Android/coroutine-based applications, consider using [parseAsync] which
    * automatically runs on the IO dispatcher to avoid blocking the main thread.
    *
-   * @return An [Article] object containing the extracted content and metadata
+   * @return An [com.sermilion.readability4k.model.Article] object containing the extracted content and metadata
    * @throws MaxElementsExceededException if the document exceeds [ReadabilityOptions.maxElemsToParse]
    *
    * @see parseAsync
-   * @see Article
+   * @see com.sermilion.readability4k.model.Article
    * @see ReadabilityOptions
    */
   open fun parse(): Article {
+    val workingDocument = createWorkingDocument()
+
     if (options.maxElemsToParse > 0) {
-      val allElements = document.getAllElements()
+      val allElements = workingDocument.getAllElements()
       val numTags = allElements.size
       if (numTags > options.maxElemsToParse) {
         throw MaxElementsExceededException(numTags, options.maxElemsToParse)
       }
     }
 
-    val metadata = metadataParser.getArticleMetadata(document, options.disableJSONLD)
+    val metadata = metadataParser.getArticleMetadata(workingDocument, options.disableJSONLD)
 
-    val comments = commentParser?.parseComments(document).orEmpty()
+    val comments = commentParser?.parseComments(workingDocument).orEmpty()
 
-    val isOldRedditPage = document.select("div.thing[data-type=link]").isNotEmpty()
+    val isOldRedditPage = workingDocument.select("div.thing[data-type=link]").isNotEmpty()
     val isCommentPage = uri.contains("/comments/")
     val parser = commentParser
 
@@ -194,20 +229,20 @@ open class Readability4K {
     )
 
     val articleContent = if (isOldRedditPage && isCommentPage && parser is RedditCommentParser) {
-      val postContent = parser.extractPostContent(document)
+      val postContent = parser.extractPostContent(workingDocument)
       postContent ?: run {
-        preprocessor.prepareDocument(document)
-        articleGrabber.grabArticle(document, metadata, grabberOptions)
+        preprocessor.prepareDocument(workingDocument)
+        articleGrabber.grabArticle(workingDocument, metadata, grabberOptions)
       }
     } else {
-      preprocessor.prepareDocument(document)
-      articleGrabber.grabArticle(document, metadata, grabberOptions)
+      preprocessor.prepareDocument(workingDocument)
+      articleGrabber.grabArticle(workingDocument, metadata, grabberOptions)
     }
     logger.debug("Grabbed: $articleContent")
 
     articleContent?.let {
       postprocessor.postProcessContent(
-        document,
+        workingDocument,
         articleContent,
         uri,
         options.additionalClassesToPreserve,
@@ -241,6 +276,17 @@ open class Readability4K {
       publishedTime = finalMetadata.publishedTime,
       comments = comments,
       serializedContent = serializedContent,
+    )
+  }
+
+  protected open fun createWorkingDocument(): Document {
+    if (!rebuildDocumentPerParse) {
+      return document
+    }
+
+    return Ksoup.parse(
+      html = sourceHtml,
+      baseUri = uri,
     )
   }
 
@@ -300,6 +346,23 @@ open class Readability4K {
   }
 
   companion object {
+    private fun buildHtmlInitialization(
+      uri: String,
+      html: String,
+      options: ReadabilityOptions,
+      commentParser: CommentParser?,
+    ): HtmlInitialization {
+      val transformedUri = applyUrlTransformers(uri, options.urlTransformers)
+      return HtmlInitialization(
+        uri = transformedUri,
+        document = Ksoup.parse(
+          html = html,
+          baseUri = transformedUri,
+        ),
+        commentParser = commentParser ?: detectCommentParser(transformedUri),
+      )
+    }
+
     internal fun applyUrlTransformers(url: String, transformers: List<UrlTransformer>): String {
       var result = url
       transformers.sortedByDescending { it.priority }.forEach { transformer ->

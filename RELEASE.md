@@ -21,14 +21,14 @@ Readability4K uses JitPack for distribution and GitHub Actions for automated rel
 Edit `library/build.gradle.kts` and update the version:
 
 ```kotlin
-version = "0.1.X"
+version = "0.2.X"
 ```
 
 Commit the version change:
 
 ```bash
 git add library/build.gradle.kts
-git commit -m "Bump version to 0.1.X"
+git commit -m "Bump version to 0.2.X"
 git push origin main
 ```
 
@@ -37,8 +37,8 @@ git push origin main
 Create an annotated tag matching the version:
 
 ```bash
-git tag -a 0.1.X -m "Release 0.1.X"
-git push origin 0.1.X
+git tag -a 0.2.X -m "Release 0.2.X"
+git push origin 0.2.X
 ```
 
 **Important**: Use annotated tags (`-a`) for better release notes generation.
@@ -60,7 +60,7 @@ Once the tag is pushed:
 
 ```kotlin
 dependencies {
-  implementation("com.github.Sermilion.readability4k:readability4k:0.1.X")
+  implementation("com.github.Sermilion.readability4k:readability4k:0.2.X")
 }
 ```
 
@@ -76,7 +76,7 @@ After the release is published:
 
 ```bash
 git add README.md
-git commit -m "Update documentation for v0.1.X"
+git commit -m "Update documentation for v0.2.X"
 git push origin main
 ```
 
@@ -88,19 +88,19 @@ Readability4K follows Semantic Versioning (SemVer):
 - **MINOR** (0.X.0): New features, backward compatible
 - **PATCH** (0.0.X): Bug fixes, backward compatible
 
-Current version convention: `0.1.X` (pre-1.0 development)
+Current version convention: `0.2.X` (pre-1.0 development)
 
 ## Release Types
 
 ### Regular Release
 
-Standard semantic version (e.g., `0.1.5`):
+Standard semantic version (e.g., `0.2.0`):
 - Creates a production release on GitHub
 - Available immediately on JitPack
 
 ### Pre-release
 
-Version with suffix (e.g., `0.1.5-beta`, `0.1.5-rc1`):
+Version with suffix (e.g., `0.2.0-beta`, `0.2.0-rc1`):
 - Creates a pre-release on GitHub (marked as "Pre-release")
 - Available on JitPack for testing
 - Use for beta versions, release candidates, etc.
@@ -109,7 +109,7 @@ Version with suffix (e.g., `0.1.5-beta`, `0.1.5-rc1`):
 
 ### JitPack Build Failed
 
-1. Check build logs: https://jitpack.io/com/github/Sermilion/readability4k/0.1.X/build.log
+1. Check build logs: https://jitpack.io/com/github/Sermilion/readability4k/0.2.X/build.log
 2. Common issues:
    - Gradle version incompatibility
    - Missing dependencies
@@ -117,8 +117,8 @@ Version with suffix (e.g., `0.1.5-beta`, `0.1.5-rc1`):
 3. Fix issues, delete the tag, and re-release:
 
 ```bash
-git tag -d 0.1.X
-git push origin :refs/tags/0.1.X
+git tag -d 0.2.X
+git push origin :refs/tags/0.2.X
 # Fix issues, then create tag again
 ```
 
@@ -140,6 +140,7 @@ Edit the GitHub Release manually:
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 0.2.0 | - | Current stable line |
 | 0.1.5 | 2026-01-11 | Reddit comment parsing, improved title extraction, media preservation controls |
 | 0.1.4 | - | Previous features |
 | 0.1.3 | - | - |

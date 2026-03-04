@@ -4,9 +4,14 @@ import com.sermilion.readability4k.Readability4K
 import com.sermilion.readability4k.model.ReadabilityOptions
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.runBlocking
+
+private const val REQUEST_TIMEOUT_MILLIS = 30_000L
+private const val CONNECT_TIMEOUT_MILLIS = 10_000L
+private const val SOCKET_TIMEOUT_MILLIS = 30_000L
 
 fun main(args: Array<String>) {
   if (args.isEmpty()) {
@@ -70,7 +75,13 @@ fun printUsage() {
 }
 
 suspend fun fetchHtml(url: String): String {
-  val client = HttpClient(CIO)
+  val client = HttpClient(CIO) {
+    install(HttpTimeout) {
+      requestTimeoutMillis = REQUEST_TIMEOUT_MILLIS
+      connectTimeoutMillis = CONNECT_TIMEOUT_MILLIS
+      socketTimeoutMillis = SOCKET_TIMEOUT_MILLIS
+    }
+  }
   return try {
     val response = client.get(url)
     response.bodyAsText()

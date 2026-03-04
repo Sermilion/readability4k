@@ -52,6 +52,7 @@ open class ReadabilityArticleGrabber(
     pageElement: Element?,
   ): Element? {
     logger.debug("**** grabArticle ****")
+    resetState()
 
     val isPaging = pageElement != null
     val page = pageElement ?: doc.body()
@@ -84,6 +85,14 @@ open class ReadabilityArticleGrabber(
     } else {
       null
     }
+  }
+
+  protected open fun resetState() {
+    articleByline = null
+    articleDir = null
+    articleLang = null
+    readabilityObjects.clear()
+    readabilityDataTable.clear()
   }
 
   private fun generateOptionsSequence(options: ArticleGrabberOptions): List<ArticleGrabberOptions> {
