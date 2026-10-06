@@ -7,6 +7,7 @@ import com.sermilion.readability4k.model.Article
 import com.sermilion.readability4k.model.ArticleGrabberOptions
 import com.sermilion.readability4k.model.ArticleMetadata
 import com.sermilion.readability4k.model.ReadabilityOptions
+import com.sermilion.readability4k.processor.ArticleContentExtension
 import com.sermilion.readability4k.processor.ArticleGrabber
 import com.sermilion.readability4k.processor.CommentParser
 import com.sermilion.readability4k.processor.MetadataParser
@@ -110,7 +111,13 @@ open class Readability4K {
     regExUtil: RegExUtil = RegExUtil(),
     preprocessor: Preprocessor = ReadabilityPreprocessor(regExUtil, logger),
     metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
-    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
+    contentExtension: ArticleContentExtension? = null,
+    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(
+      options,
+      regExUtil,
+      logger,
+      contentExtension = contentExtension,
+    ),
     postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
     commentParser: CommentParser? = null,
   ) : this(
@@ -164,7 +171,13 @@ open class Readability4K {
     regExUtil: RegExUtil = RegExUtil(),
     preprocessor: Preprocessor = ReadabilityPreprocessor(regExUtil, logger),
     metadataParser: MetadataParser = ReadabilityMetadataParser(regExUtil),
-    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(options, regExUtil, logger),
+    contentExtension: ArticleContentExtension? = null,
+    articleGrabber: ArticleGrabber = ReadabilityArticleGrabber(
+      options,
+      regExUtil,
+      logger,
+      contentExtension = contentExtension,
+    ),
     postprocessor: Postprocessor = ReadabilityPostprocessor(logger),
     commentParser: CommentParser? = null,
   ) {

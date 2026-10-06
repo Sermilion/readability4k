@@ -20,6 +20,7 @@ open class ReadabilityArticleGrabber(
   protected val regEx: RegExUtil = RegExUtil(),
   logger: Logger = Logger.NONE,
   protected val candidateFilters: List<CandidateFilter> = listOf(BlockquoteDescendantFilter),
+  private val contentExtension: ArticleContentExtension? = null,
 ) : ProcessorBase(logger), ArticleGrabber {
 
   override var articleByline: String? = null
@@ -129,8 +130,15 @@ open class ReadabilityArticleGrabber(
     page: Element,
     isPaging: Boolean,
   ): ExtractionResult {
+    val snapshot = contentExtension?.capture(doc)
     val elementsToScore = prepareNodes(doc, options)
     val candidates = scoreElements(elementsToScore, options)
+    val scoresBeforeLinkAdjustment =
+      if (contentExtension != null) {
+        readabilityObjects.mapValues { it.value.contentScore }
+      } else {
+        emptyMap()
+      }
     val topCandidateResult = getTopCandidate(page, candidates, options)
     val topCandidate = topCandidateResult.candidate
     val neededToCreateTopCandidate = topCandidateResult.wasCreated
@@ -140,6 +148,18 @@ open class ReadabilityArticleGrabber(
     logger.debug("Article content pre-prep: ${articleContent.html()}")
     prepArticle(articleContent, options, metadata)
     logger.debug("Article content post-prep: ${articleContent.html()}")
+
+    if (contentExtension != null && snapshot != null) {
+      contentExtension.apply(
+        articleContent,
+        snapshot,
+        GrabberArticleEvidence(
+          scoresBeforeLinkAdjustment = scoresBeforeLinkAdjustment,
+          linkDensityOf = ::getLinkDensity,
+          weightClasses = options.weightClasses,
+        ),
+      )
+    }
 
     if (neededToCreateTopCandidate) {
       topCandidate.attr("id", "readability-page-1")
@@ -1441,4 +1461,14 @@ open class ReadabilityArticleGrabber(
 
     val DATA_TABLE_DESCENDANTS = listOf("col", "colgroup", "tfoot", "thead", "th")
   }
+}
+
+private class GrabberArticleEvidence(
+  private val scoresBeforeLinkAdjustment: Map<Element, Double>,
+  private val linkDensityOf: (Element) -> Double,
+  override val weightClasses: Boolean,
+) : ArticleEvidence {
+  override fun contentScoreBeforeLinkAdjustment(element: Element): Double? = scoresBeforeLinkAdjustment[element]
+
+  override fun linkDensity(element: Element): Double = linkDensityOf(element)
 }

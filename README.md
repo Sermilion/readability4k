@@ -58,6 +58,28 @@ println("Content: ${article.content}")
 println("Text only: ${article.textContent}")
 ```
 
+The two-argument constructors are unchanged. Long constructors gain a defaulted
+`contentExtension: ArticleContentExtension? = null` parameter immediately before
+`articleGrabber`. There is no `@JvmOverloads`. Java callers of the full
+constructors need a recompile; the two-argument constructors do not.
+
+### Author bio and disclaimer cleanup (opt-in)
+
+Default `Readability4K(url, html).parse()` is ordinary Readability and does not
+remove author-bio or disclaimer boxes. Pass `AuthorBioDisclaimerExtension` when
+you want scored cleanup:
+
+```kotlin
+import com.sermilion.readability4k.processor.AuthorBioDisclaimerExtension
+
+val readability = Readability4K(
+  url,
+  html,
+  contentExtension = AuthorBioDisclaimerExtension(),
+)
+val article = readability.parse()
+```
+
 ### Async Usage (Recommended for Android/Coroutines)
 
 ```kotlin
