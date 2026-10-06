@@ -238,6 +238,10 @@ Readability4K follows clean architecture principles:
 - **Testable** - All components can be injected for testing
 - **Well-tested** - Includes comprehensive test suite
 
+## Testing
+
+The library keeps a set of real articles for proper testing: about 100 slimmed pages from 30 hosts, under `library/src/jvmTest/resources/author-bio-corpus/html/`. Use those pages for any JVM test that needs a real article, not only the author-bio checks.
+
 ## ProGuard/R8
 
 ProGuard rules are included automatically when you add the library dependency. If needed, they're located in the library's consumer proguard file.
