@@ -1,11 +1,9 @@
-## [2026-10-06] Drop data-test footer disclosures from reading mode
-Areas: processor package, commonTest
-- prepareNodes removes every non-body element whose data-test equals footer, case-insensitive on the whole value, on every grab attempt. It reuses the existing removal walk. Class and id unlikely stripping stays behind stripUnlikelyCandidates. matchString and byline checks are unchanged.
-- Class weight still returns zero when weightClasses is false. It still applies one negative penalty on the full class string and one on the full id. The positive bonus ignores whitespace-delimited text- tokens whose remainder is not a positive class, on both class and id. Shared positive and negative patterns are unchanged.
-- A class of footer plus a text- utility now keeps the negative penalty, so conditional cleaning can remove that node. That side effect is intended.
-- The regression is a synthetic commonTest: a neutral article sibling against a data-test footer classed text-sm text-gray-500, for a long body and a short body. No Investing.com fixture. Author-bio scoring and its tests are unchanged.
-- There is no feature flag. The default parse changes for every caller. ReadabilityOptions and ArticleGrabberOptions callers stay source compatible. If every attempt stays under the 500-character threshold, parse still returns the longest non-empty attempt.
-- Known limit: partial values such as footer-legal stay in the document. The live Investing.com page was not fetched.
+## [2026-10-06] Name signals ignore utility classes and include test hooks
+Areas: processor package, util/RegExUtil, commonTest
+- One match string feeds every name check in the grabber: byline, unlikely-candidate stripping, cousin candidates, the media-bonus container check, and class weight. It holds the class without utility tokens, the id, and test hook values (`data-test`, `data-testid`, `data-test-id`, `data-qa`, `data-cy`).
+- `RegExUtil.UTILITY_CLASS_DEFAULT_PATTERN` (constructor parameter `utilityClassPattern`) names atomic CSS tokens that collide with the scoring vocabulary: variant and arbitrary-value forms, `text-*`, overflow and scroll utilities, and content-alignment utilities. `isUtilityClass` matches a whole token.
+- Class weight scores hook names together with the class name, so the per-element range stays -50..+50. Strip and weight flags, the retry sequence, and the 500-character threshold are unchanged.
+- Regression: NameSignalTest uses the real NEWS-144 article text in Investing.com-style markup and fails on main. A default parse of the 109 jvmTest HTML pages changes on four pages compared with main: a BBC byline is lifted out of the body, and three IGN pages keep a one-line affiliate notice that main dropped.
 Feature flag: N/A
 Acceptance criteria: 1/1 implemented
 
