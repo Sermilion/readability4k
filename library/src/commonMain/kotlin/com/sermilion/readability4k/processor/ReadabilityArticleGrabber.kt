@@ -198,6 +198,14 @@ open class ReadabilityArticleGrabber(
         continue
       }
 
+      // Remove data-test="footer" on every attempt, not only while stripping unlikely class/id.
+      if (node.tagName() != "body" &&
+        node.attr("data-test").equals("footer", ignoreCase = true)
+      ) {
+        node = this.removeAndGetNext(node, "Removing data-test footer")
+        continue
+      }
+
       // Remove unlikely candidates
       if (options.stripUnlikelyCandidates) {
         val isUnlikely = regEx.isUnlikelyCandidate(matchString) &&
@@ -475,7 +483,7 @@ open class ReadabilityArticleGrabber(
         weight -= 25
       }
 
-      if (regEx.isPositive(e.className())) {
+      if (regEx.isPositive(positiveClassTokens(e.className()))) {
         weight += 25
       }
     }
@@ -486,12 +494,28 @@ open class ReadabilityArticleGrabber(
         weight -= 25
       }
 
-      if (regEx.isPositive(e.id())) {
+      if (regEx.isPositive(positiveClassTokens(e.id()))) {
         weight += 25
       }
     }
 
     return weight
+  }
+
+  /**
+   * Drop whitespace-delimited `text-` tokens whose remainder is not a positive class,
+   * so Tailwind utilities such as `text-sm` do not match the `text` positive pattern.
+   */
+  private fun positiveClassTokens(value: String): String {
+    val prefix = "text-"
+    return value.split(Regex("\\s+"))
+      .filter { token ->
+        token.isNotEmpty() && (
+          !token.startsWith(prefix, ignoreCase = true) ||
+            regEx.isPositive(token.substring(prefix.length))
+          )
+      }
+      .joinToString(" ")
   }
 
   @Suppress("LoopWithTooManyJumpStatements")

@@ -1,3 +1,30 @@
+## [2026-10-06] Remove data-test footer on every extract attempt
+Context: The Fusion Media disclosure is marked only data-test="footer". The short-body retry turns class and id stripping off, and the match string is class plus id, so unlikely-candidate removal never sees that attribute.
+Decision: On every grab attempt, delete a non-body element whose own data-test equals footer, ignoring case on the whole value. Leave ancestors. Leave values such as footer-legal. Reuse the existing removal walk.
+Reason: Removal only while stripUnlikelyCandidates is true still returns the disclosure on the retry. A substring match would delete unrelated nodes. Skipping body keeps the document root.
+Alternatives considered: Editing the unlikely-candidate pattern was rejected because that path stays behind the strip flag.
+
+## [2026-10-06] Drop non-positive text- tokens before the class bonus
+Context: A Tailwind class that begins with text- matches the positive text pattern and scores as content, so a long disclosure outranks a short article.
+Decision: Keep one positive bonus and one negative penalty per class string and per id. Ignore a whitespace-delimited token that starts with text-, case-insensitively, when the remainder is not positive. Score the negative pattern on the full class string and the full id. Leave the shared patterns unchanged. weightClasses false still returns zero.
+Reason: text-sm and text-gray-500 should add nothing. text-content still gains the bonus because the remainder matches. article-text still gains it because the token does not start with text-. Case-insensitive prefix matching follows the positive check, so TEXT-sm does not keep the bonus.
+Alternatives considered: Editing the shared positive pattern was declined so the change stays in prepareNodes and getClassWeight.
+
+## [2026-10-06] Treat conditional removal of footer text-sm as intended
+Context: Conditional cleaning and header cleaning use class weight as the whole score and remove a node when that weight is below zero.
+Decision: A class of footer plus text-sm keeps the negative penalty and loses the text- bonus, so those cleaners can remove the node.
+Reason: Before this change that class netted to zero. Keeping the penalty is why the negative pattern still runs on the full string.
+
+## [2026-10-06] Prove the footer bug with a synthetic sibling fixture
+Context: The live Investing.com DOM is not in the repo. Exact utility names beyond a text- class, compound data-test values, and the Reuters body length are unknown.
+Decision: One commonTest compares a neutral article container with a sibling data-test=footer block classed text-sm text-gray-500. Cover a body over 500 characters and a body under 500 with a longer disclosure. Assert the article sentence is present and the disclosure is absent. Do not add an Investing.com fixture.
+Reason: The unfixed short page can return on the first attempt when the disclosure is at least 500 characters, so the second case fails only if removal is skipped once stripping is off. The grabber still returns the longest non-empty attempt when every attempt stays under 500, so the short article stays observable after the footer is gone.
+
+## [2026-10-06] Keep footer removal and the text- rule on the default parse
+Context: Reading Mode uses the default parse. Grabber options already default stripping, class weights, and conditional cleaning on, and the character threshold stays 500.
+Decision: No options field turns the data-test removal or the text- token rule off. generateOptionsSequence, ArticleGrabberOptions, and ReadabilityOptions stay unchanged. Callers stay source compatible. The README gains no flag.
+Reason: A switch would leave the broken default in place. The CLI stays a wrapper, and cutting a release is outside this change.
+
 ## [2026-10-06] Change weights only when a body phrase is lost
 Context: The 100-page corpus splits calibration hosts from validation hosts. Keeping body text outranks catching every bio.
 Decision: Edit `AuthorBioScoring` only, and only after a `must_keep` sentence disappears. Validation hosts other than the TweakTown and Notebookcheck seeds stay printed misses.
