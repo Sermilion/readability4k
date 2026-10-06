@@ -1,0 +1,27 @@
+---
+contract_version: "0.5"
+issue_key: "R4K-1"
+feature_name: "replace-author-bio-and-disclaimer-cleanup-with-an-injectable-scored-extension"
+parent_spec_path: ".feature-specs/R4K-1-replace-author-bio-and-disclaimer-cleanup-with-an-injectable-scored-extension/spec.md"
+status: "complete"
+execution_model: "same_branch_commit_per_subtask"
+base_branch: "main"
+feature_branch: "feat/R4K-1-replace-author-bio-and-disclaimer-cleanup-with-an-injectable-scored-extension"
+stack_branches: []
+current_subtask_intent:
+  subtask_id: 0
+  action: "complete"
+subtasks:
+- id: 1
+  name: "Implement the requested change"
+  spec_path: "/home/sermilion/IdeaProjects/readability4k/.feature-specs/R4K-1-replace-author-bio-and-disclaimer-cleanup-with-an-injectable-scored-extension/spec_subtask_1_implement-the-requested-change.md"
+  status: "complete"
+  branch: null
+  commit_sha: null
+  workflow_id: "wftr-20261006-114934-ih9d"
+  blocked_reason: null
+  last_resumable_step: "commit_push"
+  linear_issue_id: null
+  finalizing_agent_id: null
+  participating_agent_ids: []
+  dependencies: []

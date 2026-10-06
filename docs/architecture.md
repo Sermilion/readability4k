@@ -23,6 +23,8 @@ Main package: `com.sermilion.readability4k`
 - `Article`: extraction result model
 - `model/ReadabilityOptions`: parser configuration
 - `IsProbablyReaderable`: lightweight pre-check helper
+- `processor/ArticleContentExtension`: optional single-slot extraction hook
+- `processor/AuthorBioDisclaimerExtension`: opt-in scored author-bio / disclaimer cleanup
 
 ### Internal Pipeline Components
 
@@ -45,7 +47,10 @@ Standard flow for `Readability4K.parse()` and `parseAsync()`:
 1. Parse incoming HTML into DOM.
 2. Collect metadata (title, byline, excerpt, site/language data when available).
 3. Preprocess nodes (cleanup, normalization, readability heuristics prep).
-4. Score candidates and pick top content container(s).
+4. Score candidates and pick top content container(s). An optional
+   `contentExtension` captures a snapshot before grabber normalization and
+   applies cleanup after article prep, before the readability page wrap.
+   `ReadabilityOptions` does not hold this slot; the default is null.
 5. Postprocess output content (cleanup + serialization).
 6. Construct `Article` result with HTML/text/metadata fields.
 
