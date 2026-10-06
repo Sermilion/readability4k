@@ -222,6 +222,7 @@ open class ReadabilityArticleGrabber(
         // algorithm with DIVs with are, in practice, paragraphs.
         if (this.hasSinglePInsideElement(node)) {
           val newNode = node.child(0)
+          AuthorBioDisclaimer.transferMatchingClassAndId(node, newNode)
           node.replaceWith(newNode)
           node = newNode
           elementsToScore.add(node)
@@ -1031,6 +1032,22 @@ open class ReadabilityArticleGrabber(
         br.remove()
       }
     }
+
+    stripAuthorBioAndDisclaimerBlocks(articleContent)
+  }
+
+  /**
+   * Remove site-agnostic author-bio and disclaimer blocks from the selected article.
+   * Walks descendants only; the article root is never removed.
+   */
+  protected open fun stripAuthorBioAndDisclaimerBlocks(articleContent: Element) {
+    AuthorBioDisclaimer.strip(
+      articleContent = articleContent,
+      nextNode = { node, ignoreSelfAndKids -> getNextNode(node, ignoreSelfAndKids) },
+      removeElement = { element -> removeAndGetNext(element, "author-bio or disclaimer") },
+      removeTagged = { tag, filter -> removeNodes(articleContent, tag, filter) },
+      removeNode = { node -> printAndRemove(node, "author-bio heading sibling") },
+    )
   }
 
   /**
@@ -1313,7 +1330,7 @@ open class ReadabilityArticleGrabber(
   protected open fun cleanHeaders(e: Element, options: ArticleGrabberOptions) {
     listOf("h1", "h2").forEach {
       removeNodes(e, it) { header ->
-        getClassWeight(header, options) < 0
+        getClassWeight(header, options) < 0 && !AuthorBioDisclaimer.isAuthorBioOrDisclaimerHeading(header)
       }
     }
   }

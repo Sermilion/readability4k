@@ -1,0 +1,110 @@
+diff --git a/library/src/commonMain/kotlin/com/sermilion/readability4k/processor/ReadabilityArticleGrabber.kt b/library/src/commonMain/kotlin/com/sermilion/readability4k/processor/ReadabilityArticleGrabber.kt
+index 615a36e..965c005 100644
+--- a/library/src/commonMain/kotlin/com/sermilion/readability4k/processor/ReadabilityArticleGrabber.kt
++++ b/library/src/commonMain/kotlin/com/sermilion/readability4k/processor/ReadabilityArticleGrabber.kt
+@@ -2,6 +2,7 @@ package com.sermilion.readability4k.processor
+ 
+ import com.fleeksoft.ksoup.nodes.Document
+ import com.fleeksoft.ksoup.nodes.Element
++import com.fleeksoft.ksoup.nodes.Node
+ import com.fleeksoft.ksoup.nodes.TextNode
+ import com.fleeksoft.ksoup.select.Elements
+ import com.sermilion.readability4k.model.ArticleGrabberOptions
+@@ -14,7 +15,7 @@ import com.sermilion.readability4k.util.Logger
+ import com.sermilion.readability4k.util.RegExUtil
+ import kotlin.math.floor
+ 
+-@Suppress("TooManyFunctions")
++@Suppress("TooManyFunctions", "LargeClass")
+ open class ReadabilityArticleGrabber(
+   options: ReadabilityOptions,
+   protected val regEx: RegExUtil = RegExUtil(),
+@@ -1031,6 +1032,88 @@ open class ReadabilityArticleGrabber(
+         br.remove()
+       }
+     }
++
++    stripAuthorBioAndDisclaimerBlocks(articleContent)
++  }
++
++  /**
++   * Remove site-agnostic author-bio and disclaimer blocks from the selected article.
++   * Walks descendants only; the article root is never removed.
++   */
++  @Suppress("NestedBlockDepth")
++  protected open fun stripAuthorBioAndDisclaimerBlocks(articleContent: Element) {
++    val compoundPattern = Regex(
++      "author-bio|authorbio|author-box|authorbox|author-info|author-profile|" +
++        "author-description|author-details|about-author|about-the-author|" +
++        "aboutauthor|writer-bio|bio-box",
++      RegexOption.IGNORE_CASE,
++    )
++    val tokenPattern = Regex("""\b(?:author|disclaimer)\b""", RegexOption.IGNORE_CASE)
++    val headingNames = setOf("about the author", "about author", "author bio", "disclaimer")
++    val whitespace = Regex("""\s+""")
++
++    val endOfSearch = getNextNode(articleContent, true)
++    var node = getNextNode(articleContent)
++    while (node != null && node != endOfSearch) {
++      val matchString = node.className() + " " + node.id()
++      val compoundMatch = compoundPattern.containsMatchIn(matchString)
++      val tokenMatch = tokenPattern.containsMatchIn(matchString) &&
++        precedingTextLength(articleContent, node) > node.text().trim().length
++      node = if (compoundMatch || tokenMatch) {
++        removeAndGetNext(node, "author-bio or disclaimer")
++      } else {
++        getNextNode(node)
++      }
++    }
++
++    for (level in 1..6) {
++      removeNodes(articleContent, "h$level") { heading ->
++        val normalized = whitespace.replace(heading.text().trim(), " ")
++          .removeSuffix(":")
++          .trim()
++          .lowercase()
++        if (normalized !in headingNames) {
++          return@removeNodes false
++        }
++        val siblings = ArrayList<Element>()
++        var sibling = heading.nextElementSibling()
++        while (sibling != null) {
++          val tag = sibling.tagName().lowercase()
++          val rank = tag.getOrNull(1)?.digitToIntOrNull()
++          if (tag.length == 2 && tag[0] == 'h' && rank != null && rank in 1..level) {
++            break
++          }
++          siblings.add(sibling)
++          sibling = sibling.nextElementSibling()
++        }
++        val blockText = (listOf(heading) + siblings).joinToString(" ") { it.text() }.trim()
++        if (precedingTextLength(articleContent, heading) <= blockText.length) {
++          return@removeNodes false
++        }
++        siblings.reversed().forEach { printAndRemove(it, "author-bio heading sibling") }
++        true
++      }
++    }
++  }
++
++  private fun precedingTextLength(root: Element, target: Element): Int {
++    val buffer = StringBuilder()
++    fun visit(node: Node): Boolean {
++      if (node === target) {
++        return true
++      }
++      if (node is TextNode) {
++        buffer.append(node.text())
++      }
++      for (child in node.childNodes()) {
++        if (visit(child)) {
++          return true
++        }
++      }
++      return false
++    }
++    visit(root)
++    return buffer.toString().trim().length
+   }
+ 
+   /**
