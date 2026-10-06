@@ -140,6 +140,7 @@ Edit the GitHub Release manually:
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 0.3.2 | 2026-10-06 | Republish 0.3.1 after JitPack could not build the JetBrains JDK pin |
 | 0.3.1 | 2026-10-06 | Keep inline words in sentences and score component names |
 | 0.3.0 | 2026-10-06 | Opt-in scored author-bio and disclaimer cleanup |
 | 0.2.0 | - | Previous stable line |
