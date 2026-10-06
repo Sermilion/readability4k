@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en-US" prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#" class="no-js">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<link rel="pingback" href="https://lemire.me/blog/xmlrpc.php">
+	
+<title>Ephemeral testing &#8211; Daniel Lemire&#039;s blog</title>
+<meta name='robots' content='max-image-preview:large' />
+<link rel="alternate" type="application/rss+xml" title="Daniel Lemire&#039;s blog &raquo; Feed" href="https://lemire.me/blog/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Daniel Lemire&#039;s blog &raquo; Comments Feed" href="https://lemire.me/blog/comments/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Daniel Lemire&#039;s blog &raquo; Ephemeral testing Comments Feed" href="https://lemire.me/blog/2026/10/05/ephemeral-testing/feed/" />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://lemire.me/blog/wp-json/oembed/1.0/embed?url=https%3A%2F%2Flemire.me%2Fblog%2F2026%2F10%2F05%2Fephemeral-testing%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://lemire.me/blog/wp-json/oembed/1.0/embed?url=https%3A%2F%2Flemire.me%2Fblog%2F2026%2F10%2F05%2Fephemeral-testing%2F&#038;format=xml" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="https://api.w.org/" href="https://lemire.me/blog/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://lemire.me/blog/wp-json/wp/v2/posts/23013" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://lemire.me/blog/xmlrpc.php?rsd" />
+<meta name="generator" content="WordPress 7.1.2" />
+<link rel="canonical" href="https://lemire.me/blog/2026/10/05/ephemeral-testing/" />
+<link rel='shortlink' href='https://lemire.me/blog/?p=23013' />
+    
+    <meta property="og:title" name="og:title" content="Ephemeral testing" />
+<meta property="og:type" name="og:type" content="article" />
+<meta property="og:image" name="og:image" content="https://lemire.me/blog/wp-content/uploads/2026/10/Gemini_Generated_Image_8mi98l8mi98l8mi9.jpg" />
+<meta property="og:url" name="og:url" content="https://lemire.me/blog/2026/10/05/ephemeral-testing/" />
+<meta property="og:description" name="og:description" content="We have many ways to ensure software quality. Unit testing. Fuzz testing. Integration testing. And so forth.   I&#039;d like to propose a method that was unthinkable before: ephemeral testing. (Ephemeral is a fancy word for &#039;throw away&#039; or &#039;temporary&#039;.)   You write your code. You build your software component. Or the AI agent does &hellip; Continue reading Ephemeral testing" />
+<meta property="og:locale" name="og:locale" content="en_US" />
+<meta property="og:site_name" name="og:site_name" content="Daniel Lemire&#039;s blog" />
+<meta property="twitter:card" name="twitter:card" content="summary_large_image" />
+<meta property="article:published_time" name="article:published_time" content="2026-10-05T08:00:51+00:00" />
+<meta property="article:modified_time" name="article:modified_time" content="2026-10-04T22:51:54+00:00" />
+<meta property="article:author" name="article:author" content="https://lemire.me/blog/author/lemire/" />
+ 
+ 
+
+
+<link rel="icon" href="https://lemire.me/blog/wp-content/uploads/2026/09/cropped-IMG_9858-2-32x32.jpeg" sizes="32x32" />
+<link rel="icon" href="https://lemire.me/blog/wp-content/uploads/2026/09/cropped-IMG_9858-2-192x192.jpeg" sizes="192x192" />
+<link rel="apple-touch-icon" href="https://lemire.me/blog/wp-content/uploads/2026/09/cropped-IMG_9858-2-180x180.jpeg" />
+<meta name="msapplication-TileImage" content="https://lemire.me/blog/wp-content/uploads/2026/09/cropped-IMG_9858-2-270x270.jpeg" />
+
+</head>
+
+<body class="wp-singular post-template-default single single-post postid-23013 single-format-standard wp-embed-responsive wp-theme-twentyfifteen">
+<div id="page" class="hfeed site">
+	<a class="skip-link screen-reader-text" href="#content">
+		Skip to content	</a>
+
+	<div id="sidebar" class="sidebar">
+		<header id="masthead" class="site-header">
+			<div class="site-branding">
+									<p class="site-title"><a href="https://lemire.me/blog/" rel="home" >Daniel Lemire&#039;s blog</a></p>
+										<p class="site-description">Daniel Lemire is a software performance expert. He ranks among the top 2% of scientists globally (Stanford/Elsevier 2025) and is one of GitHub&#039;s top 1000 most followed developers.</p>
+				
+				<button class="secondary-toggle">Menu and widgets</button>
+			</div>
+		</header>
+
+			<div id="secondary" class="secondary">
+
+					<nav id="site-navigation" class="main-navigation">
+				<div class="menu-main-links-container"><ul id="menu-main-links" class="nav-menu"><li id="menu-item-13529" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-13529"><a href="https://lemire.me/en/">My home page</a></li>
+<li id="menu-item-13531" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-13531"><a href="https://github.com/lemire">GitHub profile</a></li>
+</ul></div>			</nav>
+		
+		
+					<div id="widget-area" class="widget-area" role="complementary">
+				<aside id="block-22" class="widget widget_block"><div style="margin:1.2rem 0;">
+  <a href="https://www.amazon.com/dp/B0H5V8X522/" target="_blank" rel="noopener" style="display:block;margin-bottom:1rem;">
+    <img decoding="async" src="https://lemire.me/blog/wp-content/uploads/2026/09/book-B0H5V8X522.jpg" alt="" style="width:100%;max-width:180px;height:auto;border-radius:4px;display:block;box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+  </a>
+  <a href="https://www.amazon.com/dp/B0HDYG8FVK" target="_blank" rel="noopener" style="display:block;">
+    <img decoding="async" src="https://lemire.me/blog/wp-content/uploads/2026/09/book-B0HDYG8FVK.jpg" alt="" style="width:100%;max-width:180px;height:auto;border-radius:4px;display:block;box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+  </a>
+</div>
+
+<br />
+
+Your business needs help? Get in touch, I offer <a href="https://lemire.me/en/?v=1#consulting">private talks, training, consulting and I do sponsored open-source projects</a>.</aside><aside id="custom_html-5" class="widget_text widget widget_custom_html"><h2 class="widget-title">Support my work!</h2><div class="textwidget custom-html-widget">I do not accept any advertisement. However, <a href="https://github.com/sponsors/lemire">you can sponsor my open-source work on GitHub</a>.
+
+
+
+
+</div></aside><aside id="block-20" class="widget widget_block">Daniel Lemire started this blog in 2004. It contains <span class="sbs-count-posts">2,411</span> posts and <span class="sbs-count-approved">16,400</span> approved comments. <br /><br /><a href="https://refactoringenglish.com/tools/hn-popularity/">Daniel Lemire's blog ranks among the top 50 most popular blogs</a> on Hacker News, a leading tech news aggregation platform.
+</aside><aside id="block-5" class="widget widget_block">
+<div style="padding:20px" class="wp-block-tnp-minimal"><p>Join over 12,500 email subscribers:</p><div><div class="tnp tnp-subscription-minimal  "><form action="https://lemire.me/blog/wp-admin/admin-ajax.php?action=tnp&amp;na=s" method="post" style="text-align: center"><input type="hidden" name="nr" value="minimal">
+<input type="hidden" name="nlang" value="">
+<input class="tnp-email" type="email" required name="ne" value="" placeholder="Email"><input class="tnp-submit" type="submit" value="Go!" style="">
+</form></div>
+</div></div>
+</aside><aside id="search-3" class="widget widget_search"><form role="search" method="get" class="search-form" action="https://lemire.me/blog/">
+				<label>
+					<span class="screen-reader-text">Search for:</span>
+					<input type="search" class="search-field" placeholder="Search &hellip;" value="" name="s" />
+				</label>
+				<input type="submit" class="search-submit screen-reader-text" value="Search" />
+			</form></aside>
+		<aside id="recent-posts-2" class="widget widget_recent_entries">
+		<h2 class="widget-title">Recent Posts</h2><nav aria-label="Recent Posts">
+		<ul>
+											<li>
+					<a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/" aria-current="page">Ephemeral testing</a>
+									</li>
+											<li>
+					<a href="https://lemire.me/blog/2026/10/04/arxiv-capped-submissions-at-two-a-month/">Research paper overload: submissions capped at two a month</a>
+									</li>
+											<li>
+					<a href="https://lemire.me/blog/2026/10/04/googles-first-orbital-data-center-is-in-orbit/">Google&#8217;s first orbital data center is in orbit</a>
+									</li>
+											<li>
+					<a href="https://lemire.me/blog/2026/10/01/parsing-compressed-json-at-40-gb-s/">Parsing compressed JSON at 40 GB/s</a>
+									</li>
+											<li>
+					<a href="https://lemire.me/blog/2026/09/30/transcoding-utf-8-to-utf-16-with-replacement-at-gigabytes-per-second/">Transcoding UTF-8 to UTF-16 with replacement at gigabytes per second</a>
+									</li>
+					</ul>
+
+		</nav></aside><aside id="recent-comments-3" class="widget widget_recent_comments"><h2 class="widget-title">Recent Comments</h2><nav aria-label="Recent Comments"><ul id="recentcomments"><li class="recentcomments"><span class="comment-author-link">Michael</span> on <a href="https://lemire.me/blog/2026/09/25/how-many-strings-can-you-create-per-second/#comment-678402">How many strings can you create per second?</a></li><li class="recentcomments"><span class="comment-author-link">Sebastian Good</span> on <a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/#comment-678399">Ephemeral testing</a></li><li class="recentcomments"><span class="comment-author-link">Simon</span> on <a href="https://lemire.me/blog/2026/10/04/googles-first-orbital-data-center-is-in-orbit/#comment-678394">Google&#8217;s first orbital data center is in orbit</a></li><li class="recentcomments"><span class="comment-author-link">reddit</span> on <a href="https://lemire.me/blog/2026/09/25/how-many-strings-can-you-create-per-second/#comment-678375">How many strings can you create per second?</a></li><li class="recentcomments"><span class="comment-author-link">Ivan Bobev</span> on <a href="https://lemire.me/blog/2026/09/30/how-do-you-deal-with-people-who-strongly-disagree-with-your-views/#comment-678360">How do you deal with people who strongly disagree with your views?</a></li></ul></nav></aside><aside id="pages-3" class="widget widget_pages"><h2 class="widget-title">Pages</h2><nav aria-label="Pages">
+			<ul>
+				<li class="page_item page-item-14034"><a href="https://lemire.me/blog/a-short-history-of-technology/">A short history of technology</a></li>
+<li class="page_item page-item-345"><a href="https://lemire.me/blog/about-me/">About me</a></li>
+<li class="page_item page-item-4194"><a href="https://lemire.me/blog/book-recommendations/">Book recommendations</a></li>
+<li class="page_item page-item-18957"><a href="https://lemire.me/blog/cognitive-biases/">Cognitive biases</a></li>
+<li class="page_item page-item-18798"><a href="https://lemire.me/blog/interviews-and-talks/">Interviews and talks</a></li>
+<li class="page_item page-item-12110"><a href="https://lemire.me/blog/my-bets/">My bets</a></li>
+<li class="page_item page-item-14029"><a href="https://lemire.me/blog/my-favorite-articles/">My favorite articles</a></li>
+<li class="page_item page-item-19051"><a href="https://lemire.me/blog/favorite-quotes/">My favorite quotes</a></li>
+<li class="page_item page-item-18456"><a href="https://lemire.me/blog/my-sayings/">My rules</a></li>
+<li class="page_item page-item-20392"><a href="https://lemire.me/blog/newsletter/">Newsletter</a></li>
+<li class="page_item page-item-8035"><a href="https://lemire.me/blog/predictions/">Predictions</a></li>
+<li class="page_item page-item-20144"><a href="https://lemire.me/blog/privacy-policy/">Privacy Policy</a></li>
+<li class="page_item page-item-18821"><a href="https://lemire.me/blog/recommended-video-games/">Recommended video games</a></li>
+<li class="page_item page-item-987"><a href="https://lemire.me/blog/terms-of-use/">Terms of use</a></li>
+<li class="page_item page-item-725"><a href="https://lemire.me/blog/rules-to-write-a-good-research-paper/">Write  good papers</a></li>
+			</ul>
+
+			</nav></aside><aside id="archives-2" class="widget widget_archive"><h2 class="widget-title">Archives</h2>		<label class="screen-reader-text" for="archives-dropdown-2">Archives</label>
+		<select id="archives-dropdown-2" name="archive-dropdown">
+			
+			<option value="">Select Month</option>
+				<option value='https://lemire.me/blog/2026/10/'> October 2026 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2026/09/'> September 2026 &nbsp;(21)</option>
+	<option value='https://lemire.me/blog/2026/08/'> August 2026 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2026/07/'> July 2026 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2026/06/'> June 2026 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2026/05/'> May 2026 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2026/04/'> April 2026 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2026/03/'> March 2026 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2026/02/'> February 2026 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2026/01/'> January 2026 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2025/12/'> December 2025 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2025/11/'> November 2025 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2025/10/'> October 2025 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2025/09/'> September 2025 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2025/08/'> August 2025 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2025/07/'> July 2025 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2025/06/'> June 2025 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2025/05/'> May 2025 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2025/04/'> April 2025 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2025/03/'> March 2025 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2025/02/'> February 2025 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2025/01/'> January 2025 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2024/12/'> December 2024 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2024/11/'> November 2024 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2024/10/'> October 2024 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2024/09/'> September 2024 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2024/08/'> August 2024 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2024/07/'> July 2024 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2024/06/'> June 2024 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2024/05/'> May 2024 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2024/04/'> April 2024 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2024/03/'> March 2024 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2024/02/'> February 2024 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2024/01/'> January 2024 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2023/12/'> December 2023 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2023/11/'> November 2023 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2023/10/'> October 2023 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2023/09/'> September 2023 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2023/08/'> August 2023 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2023/07/'> July 2023 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2023/06/'> June 2023 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2023/05/'> May 2023 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2023/04/'> April 2023 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2023/03/'> March 2023 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2023/02/'> February 2023 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2023/01/'> January 2023 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2022/12/'> December 2022 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2022/11/'> November 2022 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2022/10/'> October 2022 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2022/09/'> September 2022 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2022/08/'> August 2022 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2022/07/'> July 2022 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2022/06/'> June 2022 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2022/05/'> May 2022 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2022/04/'> April 2022 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2022/03/'> March 2022 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2022/02/'> February 2022 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2022/01/'> January 2022 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2021/12/'> December 2021 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2021/11/'> November 2021 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2021/10/'> October 2021 &nbsp;(12)</option>
+	<option value='https://lemire.me/blog/2021/09/'> September 2021 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2021/08/'> August 2021 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2021/07/'> July 2021 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2021/06/'> June 2021 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2021/05/'> May 2021 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2021/04/'> April 2021 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2021/03/'> March 2021 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2021/02/'> February 2021 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2021/01/'> January 2021 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2020/12/'> December 2020 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2020/11/'> November 2020 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2020/10/'> October 2020 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2020/09/'> September 2020 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2020/08/'> August 2020 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2020/07/'> July 2020 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2020/06/'> June 2020 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2020/05/'> May 2020 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2020/04/'> April 2020 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2020/03/'> March 2020 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2020/02/'> February 2020 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2020/01/'> January 2020 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2019/12/'> December 2019 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2019/11/'> November 2019 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2019/10/'> October 2019 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2019/09/'> September 2019 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2019/08/'> August 2019 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2019/07/'> July 2019 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2019/06/'> June 2019 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2019/05/'> May 2019 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2019/04/'> April 2019 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2019/03/'> March 2019 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2019/02/'> February 2019 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2019/01/'> January 2019 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2018/12/'> December 2018 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2018/11/'> November 2018 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2018/10/'> October 2018 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2018/09/'> September 2018 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2018/08/'> August 2018 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2018/07/'> July 2018 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2018/06/'> June 2018 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2018/05/'> May 2018 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2018/04/'> April 2018 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2018/03/'> March 2018 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2018/02/'> February 2018 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2018/01/'> January 2018 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2017/12/'> December 2017 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2017/11/'> November 2017 &nbsp;(16)</option>
+	<option value='https://lemire.me/blog/2017/10/'> October 2017 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2017/09/'> September 2017 &nbsp;(20)</option>
+	<option value='https://lemire.me/blog/2017/08/'> August 2017 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2017/07/'> July 2017 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2017/06/'> June 2017 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2017/05/'> May 2017 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2017/04/'> April 2017 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2017/03/'> March 2017 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2017/02/'> February 2017 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2017/01/'> January 2017 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2016/12/'> December 2016 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2016/11/'> November 2016 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2016/10/'> October 2016 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2016/09/'> September 2016 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2016/08/'> August 2016 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2016/07/'> July 2016 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2016/06/'> June 2016 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2016/05/'> May 2016 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2016/04/'> April 2016 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2016/03/'> March 2016 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2016/02/'> February 2016 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2016/01/'> January 2016 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2015/12/'> December 2015 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2015/11/'> November 2015 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2015/10/'> October 2015 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2015/09/'> September 2015 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2015/08/'> August 2015 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2015/07/'> July 2015 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2015/06/'> June 2015 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2015/05/'> May 2015 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2015/04/'> April 2015 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2015/03/'> March 2015 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2015/02/'> February 2015 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2015/01/'> January 2015 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2014/12/'> December 2014 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2014/11/'> November 2014 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2014/10/'> October 2014 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2014/09/'> September 2014 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2014/08/'> August 2014 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2014/07/'> July 2014 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2014/06/'> June 2014 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2014/05/'> May 2014 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2014/04/'> April 2014 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2014/03/'> March 2014 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2014/02/'> February 2014 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2014/01/'> January 2014 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2013/12/'> December 2013 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2013/11/'> November 2013 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2013/10/'> October 2013 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2013/09/'> September 2013 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2013/08/'> August 2013 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2013/07/'> July 2013 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2013/06/'> June 2013 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2013/05/'> May 2013 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2013/04/'> April 2013 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2013/03/'> March 2013 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2013/02/'> February 2013 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2013/01/'> January 2013 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2012/12/'> December 2012 &nbsp;(2)</option>
+	<option value='https://lemire.me/blog/2012/11/'> November 2012 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2012/10/'> October 2012 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2012/09/'> September 2012 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2012/08/'> August 2012 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2012/07/'> July 2012 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2012/06/'> June 2012 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2012/05/'> May 2012 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2012/04/'> April 2012 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2012/03/'> March 2012 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2012/02/'> February 2012 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2012/01/'> January 2012 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2011/12/'> December 2011 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2011/11/'> November 2011 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2011/10/'> October 2011 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2011/09/'> September 2011 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2011/08/'> August 2011 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2011/07/'> July 2011 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2011/06/'> June 2011 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2011/05/'> May 2011 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2011/04/'> April 2011 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2011/03/'> March 2011 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2011/02/'> February 2011 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2011/01/'> January 2011 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2010/12/'> December 2010 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2010/11/'> November 2010 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2010/10/'> October 2010 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2010/09/'> September 2010 &nbsp;(3)</option>
+	<option value='https://lemire.me/blog/2010/08/'> August 2010 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2010/07/'> July 2010 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2010/06/'> June 2010 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2010/05/'> May 2010 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2010/04/'> April 2010 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2010/03/'> March 2010 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2010/02/'> February 2010 &nbsp;(5)</option>
+	<option value='https://lemire.me/blog/2010/01/'> January 2010 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2009/12/'> December 2009 &nbsp;(4)</option>
+	<option value='https://lemire.me/blog/2009/11/'> November 2009 &nbsp;(6)</option>
+	<option value='https://lemire.me/blog/2009/10/'> October 2009 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2009/09/'> September 2009 &nbsp;(8)</option>
+	<option value='https://lemire.me/blog/2009/08/'> August 2009 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2009/07/'> July 2009 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2009/06/'> June 2009 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2009/05/'> May 2009 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2009/04/'> April 2009 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2009/03/'> March 2009 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2009/02/'> February 2009 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2009/01/'> January 2009 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2008/12/'> December 2008 &nbsp;(16)</option>
+	<option value='https://lemire.me/blog/2008/11/'> November 2008 &nbsp;(25)</option>
+	<option value='https://lemire.me/blog/2008/10/'> October 2008 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2008/09/'> September 2008 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2008/08/'> August 2008 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2008/07/'> July 2008 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2008/06/'> June 2008 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2008/05/'> May 2008 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2008/04/'> April 2008 &nbsp;(20)</option>
+	<option value='https://lemire.me/blog/2008/03/'> March 2008 &nbsp;(17)</option>
+	<option value='https://lemire.me/blog/2008/02/'> February 2008 &nbsp;(12)</option>
+	<option value='https://lemire.me/blog/2008/01/'> January 2008 &nbsp;(19)</option>
+	<option value='https://lemire.me/blog/2007/12/'> December 2007 &nbsp;(20)</option>
+	<option value='https://lemire.me/blog/2007/11/'> November 2007 &nbsp;(24)</option>
+	<option value='https://lemire.me/blog/2007/10/'> October 2007 &nbsp;(19)</option>
+	<option value='https://lemire.me/blog/2007/09/'> September 2007 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2007/08/'> August 2007 &nbsp;(23)</option>
+	<option value='https://lemire.me/blog/2007/07/'> July 2007 &nbsp;(18)</option>
+	<option value='https://lemire.me/blog/2007/06/'> June 2007 &nbsp;(15)</option>
+	<option value='https://lemire.me/blog/2007/05/'> May 2007 &nbsp;(19)</option>
+	<option value='https://lemire.me/blog/2007/04/'> April 2007 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2007/03/'> March 2007 &nbsp;(7)</option>
+	<option value='https://lemire.me/blog/2007/02/'> February 2007 &nbsp;(27)</option>
+	<option value='https://lemire.me/blog/2007/01/'> January 2007 &nbsp;(20)</option>
+	<option value='https://lemire.me/blog/2006/12/'> December 2006 &nbsp;(19)</option>
+	<option value='https://lemire.me/blog/2006/11/'> November 2006 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2006/10/'> October 2006 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2006/09/'> September 2006 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2006/08/'> August 2006 &nbsp;(25)</option>
+	<option value='https://lemire.me/blog/2006/07/'> July 2006 &nbsp;(10)</option>
+	<option value='https://lemire.me/blog/2006/06/'> June 2006 &nbsp;(18)</option>
+	<option value='https://lemire.me/blog/2006/05/'> May 2006 &nbsp;(27)</option>
+	<option value='https://lemire.me/blog/2006/04/'> April 2006 &nbsp;(22)</option>
+	<option value='https://lemire.me/blog/2006/03/'> March 2006 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2006/02/'> February 2006 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2006/01/'> January 2006 &nbsp;(38)</option>
+	<option value='https://lemire.me/blog/2005/12/'> December 2005 &nbsp;(23)</option>
+	<option value='https://lemire.me/blog/2005/11/'> November 2005 &nbsp;(23)</option>
+	<option value='https://lemire.me/blog/2005/10/'> October 2005 &nbsp;(18)</option>
+	<option value='https://lemire.me/blog/2005/09/'> September 2005 &nbsp;(25)</option>
+	<option value='https://lemire.me/blog/2005/08/'> August 2005 &nbsp;(39)</option>
+	<option value='https://lemire.me/blog/2005/07/'> July 2005 &nbsp;(17)</option>
+	<option value='https://lemire.me/blog/2005/06/'> June 2005 &nbsp;(16)</option>
+	<option value='https://lemire.me/blog/2005/05/'> May 2005 &nbsp;(9)</option>
+	<option value='https://lemire.me/blog/2005/04/'> April 2005 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2005/03/'> March 2005 &nbsp;(30)</option>
+	<option value='https://lemire.me/blog/2005/02/'> February 2005 &nbsp;(20)</option>
+	<option value='https://lemire.me/blog/2005/01/'> January 2005 &nbsp;(29)</option>
+	<option value='https://lemire.me/blog/2004/12/'> December 2004 &nbsp;(11)</option>
+	<option value='https://lemire.me/blog/2004/11/'> November 2004 &nbsp;(18)</option>
+	<option value='https://lemire.me/blog/2004/10/'> October 2004 &nbsp;(14)</option>
+	<option value='https://lemire.me/blog/2004/09/'> September 2004 &nbsp;(17)</option>
+	<option value='https://lemire.me/blog/2004/08/'> August 2004 &nbsp;(13)</option>
+	<option value='https://lemire.me/blog/2004/07/'> July 2004 &nbsp;(16)</option>
+	<option value='https://lemire.me/blog/2004/06/'> June 2004 &nbsp;(16)</option>
+	<option value='https://lemire.me/blog/2004/05/'> May 2004 &nbsp;(12)</option>
+
+		</select>
+
+			
+</aside><aside id="meta-3" class="widget widget_meta"><h2 class="widget-title">Boring stuff</h2><nav aria-label="Boring stuff">
+		<ul>
+						<li><a href="https://lemire.me/blog/wp-login.php">Log in</a></li>
+			<li><a href="https://lemire.me/blog/feed/">Entries feed</a></li>
+			<li><a href="https://lemire.me/blog/comments/feed/">Comments feed</a></li>
+
+			<li><a href="https://wordpress.org/">WordPress.org</a></li>
+		</ul>
+
+		</nav></aside><aside id="block-25" class="widget widget_block widget_text">
+<p class="wp-block-paragraph"></p>
+</aside><aside id="block-26" class="widget widget_block widget_text">
+<p class="wp-block-paragraph"></p>
+</aside>			</div>
+		
+	</div>
+
+	</div>
+
+	<div id="content" class="site-content">
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+		
+<article id="post-23013" class="post-23013 post type-post status-publish format-standard has-post-thumbnail hentry category-84">
+	
+		<div class="post-thumbnail">
+			<img width="825" height="510" src="https://lemire.me/blog/wp-content/uploads/2026/10/Gemini_Generated_Image_8mi98l8mi98l8mi9-825x510.jpg" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" alt="" decoding="async" fetchpriority="high" />	</div>
+
+	
+	<header class="entry-header">
+		<h1 class="entry-title">Ephemeral testing</h1>	</header>
+
+	<div class="entry-content">
+		<p class="post-dateline">5 October 2026 &middot; 2 min</p>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="9ps6d-0-0">
+<div data-offset-key="9ps6d-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="9ps6d-0-0">We have many ways to ensure software quality. Unit testing. Fuzz testing. Integration testing. And so forth.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="bkkb0-0-0">
+<div data-offset-key="bkkb0-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="bkkb0-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="n0f7-0-0">
+<div data-offset-key="n0f7-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="n0f7-0-0">I&#8217;d like to propose a method that was unthinkable before: </span><span data-offset-key="n0f7-0-1">ephemeral testing</span><span data-offset-key="n0f7-0-2">. (Ephemeral is a fancy word for &#8216;throw away&#8217; or &#8216;temporary&#8217;.)</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="6f3i2-0-0">
+<div data-offset-key="6f3i2-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="6f3i2-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="5q75-0-0">
+<div data-offset-key="5q75-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="5q75-0-0">You write your code. You build your software component. Or the AI agent does it for you, it does not matter.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="43dkq-0-0">
+<div data-offset-key="43dkq-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="43dkq-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="f23fg-0-0">
+<div data-offset-key="f23fg-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="f23fg-0-0">Then you ask an AI agent to build on it: an application, another layer, maybe several. You have it test what it built. You do not assess the original work directly. You assess how good the software built on top of it is.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="9k6bp-0-0">
+<div data-offset-key="9k6bp-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="9k6bp-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="9m917-0-0">
+<div data-offset-key="9m917-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="9m917-0-0">It is a form of integration testing. The difference is that the software on top is entirely ephemeral. You throw it away when you are done.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="n0mf-0-0">
+<div data-offset-key="n0mf-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="n0mf-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="5r99t-0-0">
+<div data-offset-key="5r99t-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="5r99t-0-0">A library with a clean API, stable invariants, and useful errors lets the agent produce something that works quickly. A library with hidden state, surprising defaults, or incomplete docs produces a pile of patches and failures. The failures are evidence about your code, not about the agent.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="5klhj-0-0">
+<div data-offset-key="5klhj-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="5klhj-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="ac4qd-0-0">
+<div data-offset-key="ac4qd-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="ac4qd-0-0">You can repeat it. Different agents, different tasks, same foundation.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="3bk3f-0-0">
+<div data-offset-key="3bk3f-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="3bk3f-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="7uv4n-0-0">
+<div data-offset-key="7uv4n-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="7uv4n-0-0">In effect, instead of building the core while trying to anticipate what might be needed at the other layers, you just simulate the other layers by actually building them.</span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="3t8kv-0-0">
+<div data-offset-key="3t8kv-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="3t8kv-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="2hmec-0-0">
+<div data-offset-key="2hmec-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="2hmec-0-0">Of course, you could argue that with AI, you can rebuild everything whenever you need to. But that&#8217;s not practical. You need some form of stability. </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="c1lk0-0-0">
+<div data-offset-key="c1lk0-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="c1lk0-0-0"> </span></div>
+</div>
+<div class="" data-block="true" data-editor="51ceu" data-offset-key="a1c0t-0-0">
+<div data-offset-key="a1c0t-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr"><span data-offset-key="a1c0t-0-0">I have been applying this trick to various projects. As I consider a new feature, I ask my AI to prototype quickly what I might later build based on what I am doing it. Ephemeral testing works for me thus far.</span></div>
+</div>
+<div class="wpcp"><p style="font-size:0.7em; width:40%; margin-left:auto;">Daniel Lemire, "Ephemeral testing," in <em>Daniel Lemire&#039;s blog</em>, October 5, 2026, <a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/">https://lemire.me/blog/2026/10/05/ephemeral-testing/</a>.
+<br />
+<a href="#" onclick="event.preventDefault(); window.BibtexSystem.open(this);"
+    style="font-size:0.8em; text-decoration:underline; cursor:pointer;"
+    data-author="Daniel Lemire"
+    data-title="Ephemeral testing"
+    data-year="October 5, 2026"
+    data-full-link='<a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/">https://lemire.me/blog/2026/10/05/ephemeral-testing/</a>'> [BibTeX]
+</a>
+</p>
+</div>	</div>
+
+	
+<div class="author-info">
+	<h2 class="author-heading">Published by</h2>
+	<div class="author-avatar">
+		<img alt='' src='https://secure.gravatar.com/avatar/a0c6c34cf4a45ff5083d5ea541e7f27c5e4457ac393889e077af10688f6b3831?s=56&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a0c6c34cf4a45ff5083d5ea541e7f27c5e4457ac393889e077af10688f6b3831?s=112&#038;d=mm&#038;r=g 2x' class='avatar avatar-56 photo' height='56' width='56' decoding='async'/>	</div>
+
+	<div class="author-description">
+		<h3 class="author-title">Daniel Lemire</h3>
+
+		<p class="author-bio">
+			A computer science professor at the University of Quebec (TELUQ).			<a class="author-link" href="https://lemire.me/blog/author/lemire/" rel="author">
+				View all posts by Daniel Lemire			</a>
+		</p>
+
+	</div>
+</div>
+
+	<footer class="entry-footer">
+		<span class="posted-on"><span class="screen-reader-text">Posted on </span><a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/" rel="bookmark"><time class="entry-date published" datetime="2026-10-05T08:00:51+00:00">October 5, 2026</time><time class="updated" datetime="2026-10-04T22:51:54+00:00">October 4, 2026</time></a></span><span class="byline"><span class="screen-reader-text">Author </span><span class="author vcard"><a class="url fn n" href="https://lemire.me/blog/author/lemire/">Daniel Lemire</a></span></span>			</footer>
+
+</article>
+
+<div id="comments" class="comments-area">
+
+			<h2 class="comments-title">
+			One thought on &ldquo;Ephemeral testing&rdquo;		</h2>
+
+		
+		<ol class="comment-list">
+					<li id="comment-678399" class="comment even thread-even depth-1">
+			<article id="div-comment-678399" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+						<img alt='' src='https://secure.gravatar.com/avatar/6508bf52e2df1b717dae52918cd080f250d3652f9a97ae9306de02553ad04018?s=56&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6508bf52e2df1b717dae52918cd080f250d3652f9a97ae9306de02553ad04018?s=112&#038;d=mm&#038;r=g 2x' class='avatar avatar-56 photo' height='56' width='56' decoding='async'/>						<b class="fn">Sebastian Good</b> <span class="says">says:</span>					</div>
+
+					<div class="comment-metadata">
+						<a href="https://lemire.me/blog/2026/10/05/ephemeral-testing/#comment-678399"><time datetime="2026-10-05T13:00:28+00:00">October 5, 2026 at 1:00 pm</time></a>					</div>
+
+									</footer>
+
+				<div class="comment-content">
+					<p>I think this is at the moment one of the best ways to get velocity from AI programming. While it is very good at writing lots of code, it needs guidance on objective and modularity. It doesn&#8217;t seem to be good yet at saying &#8220;I will build this with a compiler pattern&#8221; or &#8220;at its heart, this is a distributed graph&#8221; or &#8220;FORTRAN-style vector computation&#8221;. But if you tell it, it often does a good job. Stacking software on top of your library forces these abstractions.</p>
+				</div>
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="https://lemire.me/blog/2026/10/05/ephemeral-testing/?replytocom=678399#respond" data-commentid="678399" data-postid="23013" data-belowelement="div-comment-678399" data-respondelement="respond" data-replyto="Reply to Sebastian Good" aria-label="Reply to Sebastian Good">Reply</a></div>			</article>
+		</li>
+		</ol>
+
+		
+	
+	
+		<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="/blog/2026/10/05/ephemeral-testing/#respond" style="display:none;">Cancel reply</a></small></h3><form action="https://lemire.me/blog/wp-comments-post.php" method="post" id="commentform" class="comment-form"><p class="comment_notes">Your email address will not be published.</p><p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p><p class="comment-form-author"><label for="author">Name <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name" required /></p>
+<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" autocomplete="email" required /></p>
+<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" autocomplete="url" /></p>
+<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes" /> <label for="wp-comment-cookies-consent">Save my name, email, and website in this browser for the next time I comment.</label></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='23013' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="47c101d2fa" /></p><p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_"><label>&#916;<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label><input type="hidden" id="ak_js_1" name="ak_js" value="86"/>
+</p></form>	</div>
+	<p class="comment_text_after"><p>You can also <a href="https://lemire.me/blog/newsletter/">subscribe by email</a> to this blog (non-commercial, no ads, weekly email).</p>
+
+<p><strong>How to post code</strong> (C, C++, Java, Python, etc.):</p>
+
+<p>Wrap your code in backticks, like this:</p>
+
+<pre>`int main() {
+    return 0;
+}`</pre></p>
+</div>
+
+	<nav class="navigation post-navigation" aria-label="Posts">
+		<h2 class="screen-reader-text">Post navigation</h2>
+		<div class="nav-links"><div class="nav-previous"><a href="https://lemire.me/blog/2026/10/04/arxiv-capped-submissions-at-two-a-month/" rel="prev"><span class="meta-nav" aria-hidden="true">Previous</span> <span class="screen-reader-text">Previous post:</span> <span class="post-title">Research paper overload: submissions capped at two a month</span></a></div></div>
+	</nav>
+		</main>
+	</div>
+
+
+	</div>
+
+	<footer id="colophon" class="site-footer">
+		<div class="site-info">
+						<a class="privacy-policy-link" href="https://lemire.me/blog/terms-of-use/" rel="privacy-policy">Terms of use</a><span role="separator" aria-hidden="true"></span>			<a href="https://wordpress.org/" class="imprint">
+				Proudly powered by WordPress			</a>
+		</div>
+	</footer>
+
+</div>
+
+
+
+
+
+
+
+
+	
+	
+</body>
+</html>

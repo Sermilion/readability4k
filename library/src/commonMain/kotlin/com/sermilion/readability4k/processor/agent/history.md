@@ -7,3 +7,8 @@ Areas: library processor, ReadabilityArticleGrabber and AuthorBioDisclaimer; lib
 - No public API change and no feature flag. Non-English headings are unimplemented. The two publisher pages were not captured. The pull request is still unopened.
 Feature flag: N/A
 Acceptance criteria: 2/4 implemented
+
+## 2026-10-06 — Real-article author-bio corpus
+- Added `jvmTest/resources/author-bio-corpus/` with 100 slimmed real HTML pages and CORPUS.md.
+- Extended strip to treat block-level `rel=author` / schema.org Person boxes (and `journalist` class token) so Notebookcheck sidebar bios are removed.
+- Regression: `AuthorBioCorpusRegressionTest` + generated `AuthorBioCorpusIndex`.

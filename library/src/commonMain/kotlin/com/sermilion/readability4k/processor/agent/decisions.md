@@ -22,3 +22,13 @@ Reason: A long author box matches the byline pattern and stays because a valid b
 Context: The two publisher pages named in the issue have unknown class and id strings.
 Decision: Use the listed compound tokens and the English heading phrases. Tests are synthetic common tests against example.com. Host names stay out of library code, patterns, and test URLs. Existing notebookcheck tests stay unchanged. Non-English headings stay unimplemented.
 Reason: The digest fixed the token list because the markup was unknown, so this work does not fetch those URLs. A later captured page may add one generic compound token and live only as a jvm test resource.
+
+## [2026-10-06] Treat rel=author and schema.org Person boxes as author boxes
+Context: Real Notebookcheck pages put the bio in a trailing `rel="author"` / `itemtype=Person` box (`j_abstract` sibling), which compound class tokens do not name.
+Decision: Block-level elements (`div`/`aside`/`section`/`footer`/`article`) with `rel` containing author or an `itemtype` containing Person use the same preceding-text guard as bare author class tokens. The compound list also includes `journalist`. No new public option; function count stays at ten by inlining the check.
+Reason: Removing only `j_author` left the first-person bio in extracted text. Matching the person box removes the whole sidebar without host-specific selectors.
+
+## [2026-10-06] Add a checked-in ~100-page real-article corpus
+Context: Synthetic common tests do not exercise live publisher markup; CI cannot fetch the network.
+Decision: Store slimmed real HTML under `jvmTest/resources/author-bio-corpus/` with a generated Kotlin index and a jvm regression suite. Rebuild notes live in CORPUS.md.
+Reason: Deterministic coverage of TweakTown, Notebookcheck, and many other hosts.

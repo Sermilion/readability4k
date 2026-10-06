@@ -208,6 +208,24 @@ class AuthorBioDisclaimerRemovalTest :
         article.shouldKeep("Brief preface.", longSection)
       }
 
+      test("rel=author person box drops the bio and keeps the body") {
+        val bio =
+          "I write about IT security and artificial intelligence. Cybersecurity is one of my regular topics, " +
+            "among others for Golem.de. At Notebookcheck, my focus is on practical AI for everyday users."
+        val article = parseArticle(
+          """
+            <p>$body</p>
+            <div itemscope itemtype="http://schema.org/Person" rel="author" class="journalist_bottom">
+              <div class="j_author">Staff writer</div>
+              <div class="j_abstract">$bio</div>
+            </div>
+          """.trimIndent(),
+        )
+
+        article.shouldKeep(body)
+        article.shouldDrop(bio, "Staff writer")
+      }
+
       test("a disclaimer heading removes a following text node and keeps the next section") {
         val disclaimer =
           "Offers in this note are not personal advice and do not create a client relationship."

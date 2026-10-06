@@ -8,10 +8,11 @@ internal object AuthorBioDisclaimer {
   private val compoundClassOrId = Regex(
     "author-bio|authorbio|author-box|authorbox|author-info|author-profile|" +
       "author-description|author-details|about-author|about-the-author|" +
-      "aboutauthor|writer-bio|bio-box",
+      "aboutauthor|writer-bio|bio-box|journalist",
     RegexOption.IGNORE_CASE,
   )
   private val authorOrDisclaimerToken = Regex("""\b(?:author|disclaimer)\b""", RegexOption.IGNORE_CASE)
+  private val relAuthorToken = Regex("""(?:^|\s)author(?:\s|$)""", RegexOption.IGNORE_CASE)
   private val trailingColon = Regex("""\s*:\s*$""")
   private val headingNames = setOf(
     "about the author",
@@ -19,6 +20,7 @@ internal object AuthorBioDisclaimer {
     "author bio",
     "disclaimer",
   )
+  private val authorBoxTags = setOf("div", "aside", "section", "footer", "article")
   private const val TEXT_CUT_MARKER = "\uE000"
 
   fun isAuthorBioOrDisclaimerHeading(element: Element): Boolean {
@@ -32,8 +34,15 @@ internal object AuthorBioDisclaimer {
    */
   fun transferMatchingClassAndId(from: Element, to: Element) {
     val matchString = from.className() + " " + from.id()
+    val semanticAuthorBox =
+      from.tagName().lowercase() in authorBoxTags &&
+        (
+          relAuthorToken.containsMatchIn(from.attr("rel")) ||
+            from.attr("itemtype").contains("Person", ignoreCase = true)
+          )
     val matches = compoundClassOrId.containsMatchIn(matchString) ||
-      authorOrDisclaimerToken.containsMatchIn(matchString)
+      authorOrDisclaimerToken.containsMatchIn(matchString) ||
+      semanticAuthorBox
     if (!matches) {
       return
     }
@@ -114,7 +123,13 @@ internal object AuthorBioDisclaimer {
     if (compoundClassOrId.containsMatchIn(matchString)) {
       return true
     }
-    if (!authorOrDisclaimerToken.containsMatchIn(matchString)) {
+    val semanticAuthorBox =
+      node.tagName().lowercase() in authorBoxTags &&
+        (
+          relAuthorToken.containsMatchIn(node.attr("rel")) ||
+            node.attr("itemtype").contains("Person", ignoreCase = true)
+          )
+    if (!authorOrDisclaimerToken.containsMatchIn(matchString) && !semanticAuthorBox) {
       return false
     }
     return precedingTextLength(articleContent, node) > node.text().length
