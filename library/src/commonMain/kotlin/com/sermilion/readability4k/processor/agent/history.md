@@ -1,3 +1,12 @@
+## [2026-10-06] Name signals ignore utility classes and include test hooks
+Areas: processor package, util/RegExUtil, commonTest
+- One match string feeds every name check in the grabber: byline, unlikely-candidate stripping, cousin candidates, the media-bonus container check, and class weight. It holds the class without utility tokens, the id, and test hook values (`data-test`, `data-testid`, `data-test-id`, `data-qa`, `data-cy`).
+- `RegExUtil.UTILITY_CLASS_DEFAULT_PATTERN` (constructor parameter `utilityClassPattern`) names atomic CSS tokens that collide with the scoring vocabulary: variant and arbitrary-value forms, `text-*`, overflow and scroll utilities, and content-alignment utilities. `isUtilityClass` matches a whole token.
+- Class weight scores hook names together with the class name, so the per-element range stays -50..+50. Strip and weight flags, the retry sequence, and the 500-character threshold are unchanged.
+- Regression: NameSignalTest uses the real NEWS-144 article text in Investing.com-style markup and fails on main. A default parse of the 109 jvmTest HTML pages changes on four pages compared with main: a BBC byline is lifted out of the body, and three IGN pages keep a one-line affiliate notice that main dropped.
+Feature flag: N/A
+Acceptance criteria: 1/1 implemented
+
 ## [2026-10-06] Injectable scored author-bio extension
 Areas: processor package, Readability4K, commonTest, jvmTest author-bio corpus, README, docs/architecture.md
 - Default `Readability4K(uri, html)` parse leaves author bios and disclaimers in the article. Callers opt in by passing `AuthorBioDisclaimerExtension` on the single `contentExtension` parameter.

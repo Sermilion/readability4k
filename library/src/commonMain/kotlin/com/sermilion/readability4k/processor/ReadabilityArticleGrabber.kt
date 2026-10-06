@@ -190,7 +190,7 @@ open class ReadabilityArticleGrabber(
     var node: Element? = doc
 
     while (node != null) {
-      val matchString = node.className() + " " + node.id()
+      val matchString = getMatchString(node)
 
       // Check to see if this node is a byline, and remove it if it is.
       if (checkByline(node, matchString)) {
@@ -445,7 +445,7 @@ open class ReadabilityArticleGrabber(
   }
 
   private fun isLikelyNonContentContainer(node: Element): Boolean {
-    val matchString = node.className() + " " + node.id()
+    val matchString = getMatchString(node)
     return regEx.isNegative(matchString) ||
       matchString.contains("sidebar", ignoreCase = true) ||
       matchString.contains("related", ignoreCase = true) ||
@@ -467,32 +467,55 @@ open class ReadabilityArticleGrabber(
       return 0
     }
 
-    var weight = 0
+    // Look for a special classname (test hook names count as class names) and ID
+    val className = (getSemanticClassName(e) + " " + getHookNames(e)).trim()
+    return getNameWeight(className) + getNameWeight(e.id())
+  }
 
-    // Look for a special classname
-    if (e.className().isNotBlank()) {
-      if (regEx.isNegative(e.className())) {
-        weight -= 25
-      }
-
-      if (regEx.isPositive(e.className())) {
-        weight += 25
-      }
+  private fun getNameWeight(name: String): Int {
+    if (name.isBlank()) {
+      return 0
     }
 
-    // Look for a special ID
-    if (e.id().isNotBlank()) {
-      if (regEx.isNegative(e.id())) {
-        weight -= 25
-      }
+    var weight = 0
 
-      if (regEx.isPositive(e.id())) {
-        weight += 25
-      }
+    if (regEx.isNegative(name)) {
+      weight -= 25
+    }
+
+    if (regEx.isPositive(name)) {
+      weight += 25
     }
 
     return weight
   }
+
+  /**
+   * Class, ID, and test hook names that the unlikely, byline, positive, and negative
+   * patterns match against.
+   */
+  protected open fun getMatchString(node: Element): String {
+    val hookNames = getHookNames(node)
+    val matchString = getSemanticClassName(node) + " " + node.id()
+    return if (hookNames.isEmpty()) matchString else "$matchString $hookNames"
+  }
+
+  /**
+   * The class attribute without atomic CSS utility tokens, which describe presentation
+   * rather than the role of the element.
+   */
+  protected open fun getSemanticClassName(node: Element): String = node.classNames()
+    .filterNot { regEx.isUtilityClass(it) }
+    .joinToString(" ")
+
+  /**
+   * Values of test hook attributes. Sites that style with utility or hashed classes often
+   * name their components only here, e.g. `data-testid="site-footer"`.
+   */
+  protected open fun getHookNames(node: Element): String = SEMANTIC_HOOK_ATTRIBUTES
+    .map { node.attr(it).trim() }
+    .filter { it.isNotEmpty() }
+    .joinToString(" ")
 
   @Suppress("LoopWithTooManyJumpStatements")
   protected open fun getNodeAncestors(node: Element, maxDepth: Int = 0): List<Element> {
@@ -825,7 +848,7 @@ open class ReadabilityArticleGrabber(
   }
 
   private fun isValidCousinCandidate(cousin: Element): Boolean {
-    val matchString = cousin.className() + " " + cousin.id()
+    val matchString = getMatchString(cousin)
     return !regEx.isUnlikelyCandidate(matchString) || regEx.okMaybeItsACandidate(matchString)
   }
 
@@ -1434,6 +1457,8 @@ open class ReadabilityArticleGrabber(
     const val TAG_SCORE_HEADER_PENALTY = -5
 
     val DEFAULT_TAGS_TO_SCORE = listOf("section", "h2", "h3", "h4", "h5", "h6", "p", "td", "pre")
+
+    val SEMANTIC_HOOK_ATTRIBUTES = listOf("data-test", "data-testid", "data-test-id", "data-qa", "data-cy")
 
     val DIV_TO_P_ELEMS =
       listOf("a", "blockquote", "dl", "div", "img", "ol", "p", "pre", "table", "ul", "select")

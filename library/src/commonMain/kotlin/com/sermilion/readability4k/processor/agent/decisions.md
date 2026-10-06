@@ -1,3 +1,20 @@
+## [2026-10-06] Name checks read semantic class tokens, id, and test hooks
+Context: Utility-class sites (Tailwind, Bootstrap) name their regions in test hook attributes rather than class or id, and their class attributes are mostly presentational tokens. Investing.com marks its Fusion Media footer only with data-test="footer", and its text-xs class matched the positive `text` pattern, so the footer outscored the Reuters body.
+Decision: Every grabber name check reads one match string: class tokens that are not atomic CSS utilities, the id, and test hook values. The vocabulary, strip and weight flags, and retry sequence are unchanged, so hook names are stripped, scored, and relaxed exactly like class names.
+Reason: This extends the existing signal source instead of adding a removal path keyed to one attribute value. A data-testid="related-stories" block is stripped by the same `related` rule that strips a class of that name.
+Alternatives considered: Deleting data-test="footer" on every attempt (a special case that bypasses the strip flag). Stripping only `text-` tokens inside class weight (leaves overflow-hidden, md:hidden, and every other check unchanged).
+
+## [2026-10-06] Utility vocabulary targets collisions, and is value-aware where names are shared
+Context: Substring patterns such as `text`, `content`, `hidden`, and `scroll` also occur inside utility tokens such as text-sm, content-center, overflow-hidden, and scroll-smooth.
+Decision: `UTILITY_CLASS_DEFAULT_PATTERN` covers variant (`md:hidden`) and arbitrary-value (`text-[18px]`) forms, any `text-*`, overflow and scroll utilities with their CSS values, and content-alignment utilities. The pattern is a RegExUtil constructor parameter like the other vocabularies.
+Reason: content-wrapper, overflow-menu, and scroll-container are semantic names, so only their utility values count as presentational. A `text-` prefix is almost always a utility (size, alignment, or colour, including custom theme colours), so the whole prefix counts; a rare text-content class loses only its +25.
+
+## [2026-10-06] Test hook names share the class-name weight slot
+Context: Scoring hook names as a third weight source next to class and id let an element reach +75. On the jvmTest corpus that pulled Nature's related-articles and subjects lists into the body, and it also merged Wired's chunked deals body.
+Decision: Hook names join the semantic class name before positive and negative matching, so class weight stays -50..+50.
+Reason: Hook names describe the same component as its class. They add a signal where the class has none (utility or hashed classes) without rescaling Mozilla's calibrated weights.
+Revisit when: A fixture shows a hashed-class site whose body is named only by its hooks and still loses to chrome.
+
 ## [2026-10-06] Change weights only when a body phrase is lost
 Context: The 100-page corpus splits calibration hosts from validation hosts. Keeping body text outranks catching every bio.
 Decision: Edit `AuthorBioScoring` only, and only after a `must_keep` sentence disappears. Validation hosts other than the TweakTown and Notebookcheck seeds stay printed misses.

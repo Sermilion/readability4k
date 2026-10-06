@@ -19,6 +19,19 @@ open class RegExUtil {
         "masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|" +
         "sponsor|shopping|tags|tool|widget"
 
+    /**
+     * Atomic CSS utility tokens (Tailwind, Bootstrap) whose names collide with the
+     * positive, negative, or unlikely vocabulary but describe presentation, not role:
+     * variant and arbitrary-value forms, `text-*`, overflow and scroll utilities, and
+     * content-alignment utilities. Matched against a whole class token.
+     */
+    const val UTILITY_CLASS_DEFAULT_PATTERN =
+      "[\\w-]+:\\S+|\\S*\\[\\S*\\]\\S*|-?text-\\S+|" +
+        "overflow(?:-[xy])?-(?:auto|hidden|clip|visible|scroll)|" +
+        "scroll-(?:auto|smooth|[mp][trblxyse]?-\\S+)|" +
+        "content-(?:center|start|end|between|around|evenly|baseline|stretch|normal|none)|" +
+        "(?:place|align|justify)-content-\\S+"
+
     const val EXTRANEOUS_DEFAULT_PATTERN =
       "print|archive|comment|discuss|e[\\-]?mail|share|reply|all|login|sign|single|utility"
 
@@ -70,6 +83,9 @@ open class RegExUtil {
 
   protected val hashUrl: Regex
 
+  protected val utilityClass: Regex
+
+  @Suppress("LongParameterList")
   constructor(
     unlikelyCandidatesPattern: String = UNLIKELY_CANDIDATES_DEFAULT_PATTERN,
     okMaybeItsACandidatePattern: String = OK_MAYBE_ITS_A_CANDIDATE_DEFAULT_PATTERN,
@@ -85,6 +101,7 @@ open class RegExUtil {
     whitespacePattern: String = WHITESPACE_DEFAULT_PATTERN,
     hasContentPattern: String = HAS_CONTENT_DEFAULT_PATTERN,
     hashUrlPattern: String = HASH_URL_DEFAULT_PATTERN,
+    utilityClassPattern: String = UTILITY_CLASS_DEFAULT_PATTERN,
   ) {
     this.unlikelyCandidates = Regex(unlikelyCandidatesPattern, RegexOption.IGNORE_CASE)
     this.okMaybeItsACandidate = Regex(okMaybeItsACandidatePattern, RegexOption.IGNORE_CASE)
@@ -100,6 +117,7 @@ open class RegExUtil {
     this.whitespace = Regex(whitespacePattern)
     this.hasContent = Regex(hasContentPattern)
     this.hashUrl = Regex(hashUrlPattern)
+    this.utilityClass = Regex(utilityClassPattern, RegexOption.IGNORE_CASE)
   }
 
   open fun isPositive(matchString: String): Boolean = positive.containsMatchIn(matchString)
@@ -121,4 +139,6 @@ open class RegExUtil {
   open fun isVideo(matchString: String): Boolean = videos.containsMatchIn(matchString)
 
   open fun isHashUrl(url: String): Boolean = hashUrl.containsMatchIn(url)
+
+  open fun isUtilityClass(classToken: String): Boolean = utilityClass.matches(classToken)
 }
