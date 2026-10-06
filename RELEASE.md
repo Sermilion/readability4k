@@ -88,7 +88,7 @@ Readability4K follows Semantic Versioning (SemVer):
 - **MINOR** (0.X.0): New features, backward compatible
 - **PATCH** (0.0.X): Bug fixes, backward compatible
 
-Current version convention: `0.2.X` (pre-1.0 development)
+Current version convention: `0.3.X` (pre-1.0 development)
 
 ## Release Types
 
@@ -140,7 +140,8 @@ Edit the GitHub Release manually:
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| 0.2.0 | - | Current stable line |
+| 0.3.0 | 2026-10-06 | Opt-in scored author-bio and disclaimer cleanup |
+| 0.2.0 | - | Previous stable line |
 | 0.1.5 | 2026-01-11 | Reddit comment parsing, improved title extraction, media preservation controls |
 | 0.1.4 | - | Previous features |
 | 0.1.3 | - | - |
