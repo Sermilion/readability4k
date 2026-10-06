@@ -203,7 +203,8 @@ open class ReadabilityArticleGrabber(
         val isUnlikely = regEx.isUnlikelyCandidate(matchString) &&
           !regEx.okMaybeItsACandidate(matchString) &&
           node.tagName() != "body" &&
-          node.tagName() != "a"
+          node.tagName() != "a" &&
+          !isInRunningText(node)
 
         if (isUnlikely) {
           node = this.removeAndGetNext(node, "Removing unlikely candidate")
@@ -267,6 +268,22 @@ open class ReadabilityArticleGrabber(
 
     return elementsToScore
   }
+
+  /**
+   * An inline element whose parent holds text of its own, such as a link wrapper inside a
+   * sentence. Removing it would cut words out of the sentence.
+   */
+  protected open fun isInRunningText(node: Element): Boolean {
+    if (!isPhrasingContent(node)) {
+      return false
+    }
+    val parent = node.parent() ?: return false
+    return parent.textNodes().any { it.text().isNotBlank() }
+  }
+
+  protected open fun isPhrasingContent(element: Element): Boolean =
+    (PHRASING_ELEMS.contains(element.tagName()) || element.tagName() in PHRASING_CONTAINER_ELEMS) &&
+      element.children().all { isPhrasingContent(it) }
 
   protected open fun checkByline(node: Element, matchString: String): Boolean {
     if (this.articleByline != null) {
@@ -509,8 +526,9 @@ open class ReadabilityArticleGrabber(
     .joinToString(" ")
 
   /**
-   * Values of test hook attributes. Sites that style with utility or hashed classes often
-   * name their components only here, e.g. `data-testid="site-footer"`.
+   * Values of test hook and component name attributes. Sites that style with utility or hashed
+   * classes often name their components only here, e.g. `data-testid="site-footer"` or
+   * `data-component-name="Viafoura:Comments"`.
    */
   protected open fun getHookNames(node: Element): String = SEMANTIC_HOOK_ATTRIBUTES
     .map { node.attr(it).trim() }
@@ -1342,7 +1360,7 @@ open class ReadabilityArticleGrabber(
     var next = getNextNode(e)
 
     while (next != null && next != endOfSearchMarkerNode) {
-      next = if (regex.containsMatchIn(next.className() + " " + next.id())) {
+      next = if (regex.containsMatchIn(getMatchString(next)) && !isInRunningText(next)) {
         removeAndGetNext(next, regex.pattern)
       } else {
         getNextNode(next)
@@ -1458,7 +1476,24 @@ open class ReadabilityArticleGrabber(
 
     val DEFAULT_TAGS_TO_SCORE = listOf("section", "h2", "h3", "h4", "h5", "h6", "p", "td", "pre")
 
-    val SEMANTIC_HOOK_ATTRIBUTES = listOf("data-test", "data-testid", "data-test-id", "data-qa", "data-cy")
+    val PHRASING_ELEMS = listOf(
+      "abbr", "audio", "b", "bdo", "br", "button", "cite", "code", "data", "datalist", "dfn", "em", "embed",
+      "i", "img", "input", "kbd", "label", "mark", "math", "meter", "noscript", "object", "output",
+      "progress", "q", "ruby", "samp", "script", "select", "small", "span", "strong", "sub", "sup",
+      "textarea", "time", "var", "wbr",
+    )
+
+    val PHRASING_CONTAINER_ELEMS = listOf("a", "del", "ins")
+
+    val SEMANTIC_HOOK_ATTRIBUTES = listOf(
+      "data-test",
+      "data-testid",
+      "data-test-id",
+      "data-qa",
+      "data-cy",
+      "data-component",
+      "data-component-name",
+    )
 
     val DIV_TO_P_ELEMS =
       listOf("a", "blockquote", "dl", "div", "img", "ol", "p", "pre", "table", "ul", "select")

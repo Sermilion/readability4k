@@ -1,3 +1,21 @@
+## [2026-10-06] Component name attributes are name signals
+Context: Once utility classes stopped counting, the GamesRadar comment widget leaked a sign-in prompt into the article. In 0.2.0 it had been dropped only because a utility class happened to contain `comment` (`rounded-b-[var(--comment-widget-border-radius,0)]`). The widget's only real name is `data-component-name="Viafoura:Comments"`.
+Decision: `data-component` and `data-component-name` join the hook attributes, so they feed the same match string and class-weight slot as test hooks.
+Reason: Component-based sites (Future plc, Hearst, and others) name regions such as `Footer`, `PostArticleLinks`, and `article-content` in these attributes. That is the same kind of signal as test hooks.
+Alternatives considered: Treating `overflow-hidden` or bracketed tokens as names again (brings back the NEWS-144 false signals).
+
+## [2026-10-06] `carousel` is negative vocabulary
+Context: Future plc articles (PC Gamer, GamesRadar) embed a JW Player carousel mid-article. Its static HTML is a "Latest Videos From <site>" header and an empty player host. 0.2.0 dropped it only because of `overflow-hidden`. Its real name is `data-component-name="JwPlayer:Carousel"`.
+Decision: Add `carousel` to `NEGATIVE_DEFAULT_PATTERN`.
+Reason: A carousel is a navigation or recirculation widget, like the `promo`, `related`, and `widget` names already in the list. A negative weight does not strip the element. It only makes the conditional cleaner judge it more strictly. Across 206 pages from the Readian feed, the 20 pages from the adb run, and the 109 jvmTest pages, extraction matches 0.2.0 except the recovered inline word on lifehacker.ru and a spacing change on IGN.
+Alternatives considered: Unlikely vocabulary (would strip galleries outright on the first attempt). `player` (would penalise kept video embeds).
+
+## [2026-10-06] Name-based removal never cuts words out of a sentence
+Context: Unlikely-candidate stripping and the share cleaner remove any element whose name matches, including inline wrappers inside a paragraph. Investing.com wraps linked company names in `<span class="aqPopupWrapper">`, so "Former Anthropic researcher" lost "Anthropic".
+Decision: Both removals skip an element that is phrasing content (Mozilla's phrasing list, plus `a`, `del`, and `ins`, with every descendant phrasing) when its parent has non-blank text of its own. The share cleaner now reads the same match string as the other name checks.
+Reason: An inline element in running text is part of the sentence whatever it is named. Block-level chrome and inline chrome without surrounding text are still removed.
+Alternatives considered: Dropping `popup` from the unlikely vocabulary (keeps the bug for every other name). Reusing `hasChildBlockElement` (it counts `a` and `img` children as blocks, so link wrappers never qualify).
+
 ## [2026-10-06] Name checks read semantic class tokens, id, and test hooks
 Context: Utility-class sites (Tailwind, Bootstrap) name their regions in test hook attributes rather than class or id, and their class attributes are mostly presentational tokens. Investing.com marks its Fusion Media footer only with data-test="footer", and its text-xs class matched the positive `text` pattern, so the footer outscored the Reuters body.
 Decision: Every grabber name check reads one match string: class tokens that are not atomic CSS utilities, the id, and test hook values. The vocabulary, strip and weight flags, and retry sequence are unchanged, so hook names are stripped, scored, and relaxed exactly like class names.

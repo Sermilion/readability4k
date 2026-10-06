@@ -1,3 +1,17 @@
+## [2026-10-06] Read component name attributes as name signals; carousel is negative
+Areas: processor package, util/RegExUtil, commonTest
+- `SEMANTIC_HOOK_ATTRIBUTES` adds `data-component` and `data-component-name`.
+- `NEGATIVE_DEFAULT_PATTERN` adds `carousel`.
+- Regression corpus: 206 real pages fetched from the Readian feed plus 20 from the adb run, compared against 0.2.0. Only two pages differ: lifehacker.ru gets back an inline word, and IGN has a spacing change. The 109 jvmTest pages are unchanged against main.
+Feature flag: N/A
+
+## [2026-10-06] Keep inline elements inside sentences
+Areas: processor package, commonTest
+- `isInRunningText` guards unlikely-candidate stripping and `cleanMatchedNodes`. It holds for phrasing content (`PHRASING_ELEMS` plus `PHRASING_CONTAINER_ELEMS`, every descendant phrasing) whose parent has non-blank text.
+- `cleanMatchedNodes` now matches `getMatchString`, so the share cleaner sees semantic class tokens, the id, and test hooks.
+- On the real Investing.com HTML the article keeps "Former Anthropic researcher" and "his former employer and OpenAI". None of the 109 jvmTest HTML pages changes extraction against main.
+Feature flag: N/A
+
 ## [2026-10-06] Name signals ignore utility classes and include test hooks
 Areas: processor package, util/RegExUtil, commonTest
 - One match string feeds every name check in the grabber: byline, unlikely-candidate stripping, cousin candidates, the media-bonus container check, and class weight. It holds the class without utility tokens, the id, and test hook values (`data-test`, `data-testid`, `data-test-id`, `data-qa`, `data-cy`).

@@ -47,9 +47,30 @@ class NameSignalTest : FunSpec({
     val text = Readability4K(INVESTING_URL, investingPage()).parse().articleContent?.text().orEmpty()
 
     text shouldContain "Former Anthropic researcher Jacob Coxon will testify"
+    text shouldContain "his former employer and OpenAI of"
     text shouldContain "Reuters could not immediately verify the report."
     text shouldNotContain "Fusion Media"
     text shouldNotContain "Risk Disclosure"
+  }
+
+  test("inline element named like chrome inside a sentence keeps its words") {
+    val html = """
+      <html>
+        <body>
+          <div>
+            ${paragraphs(ARTICLE_SENTENCE, count = 4)}
+            <p>Speakers included <span class="share-popup">Jane Doe</span> and <em class="sidebar-note">John Roe</em>,
+            who answered questions from the council for most of the afternoon session.</p>
+          </div>
+          <div class="sidebar"><span class="share-popup">Share this story</span></div>
+        </body>
+      </html>
+    """.trimIndent()
+
+    val text = Readability4K("https://example.com/story", html).parse().articleContent?.text().orEmpty()
+
+    text shouldContain "Speakers included Jane Doe and John Roe,"
+    text shouldNotContain "Share this story"
   }
 
   test("chrome named only by a test hook is stripped like a class name") {
@@ -71,7 +92,56 @@ class NameSignalTest : FunSpec({
     text shouldContain ARTICLE_SENTENCE
     text shouldNotContain RELATED_SENTENCE
   }
+
+  test("component name attribute marks comments inside the article as unlikely") {
+    val html = """
+      <html>
+        <body>
+          <article class="flex-1">
+            ${paragraphs(ARTICLE_SENTENCE, count = 5)}
+            <div class="relative mt-6 mx-4" data-component-name="Viafoura:Comments">
+              <div class="absolute top-0 left-0 w-full h-full">
+                <p class="mb-3 text-lg!">$COMMENT_PROMPT</p>
+              </div>
+            </div>
+          </article>
+        </body>
+      </html>
+    """.trimIndent()
+
+    val text = Readability4K("https://example.com/story", html).parse().articleContent?.text().orEmpty()
+
+    text shouldContain ARTICLE_SENTENCE
+    text shouldNotContain COMMENT_PROMPT
+  }
+
+  test("video carousel named only by its component is not kept in the article") {
+    val html = """
+      <html>
+        <body>
+          <article class="flex-1">
+            ${paragraphs(ARTICLE_SENTENCE, count = 2)}
+            <div class="my-6 w-full overflow-hidden rounded-[10px]" data-component-name="JwPlayer:Carousel">
+              <div class="flex items-center justify-between px-[14px] py-3">
+                <span class="inline-flex text-sm"><span>Latest Videos From</span> <span>Example Site</span></span>
+              </div>
+              <div class="aspect-video w-full"><div class="absolute inset-0"></div></div>
+            </div>
+            ${paragraphs(ARTICLE_SENTENCE, count = 3)}
+          </article>
+        </body>
+      </html>
+    """.trimIndent()
+
+    val text = Readability4K("https://example.com/story", html).parse().articleContent?.text().orEmpty()
+
+    text shouldContain ARTICLE_SENTENCE
+    text shouldNotContain "Latest Videos From"
+  }
 })
+
+private const val COMMENT_PROMPT =
+  "You must confirm your public display name before commenting, then log in again to join the conversation."
 
 private const val INVESTING_URL =
   "https://www.investing.com/news/economy-news/" +
@@ -98,14 +168,17 @@ private fun investingPage(): String = """
             Former Anthropic researcher Coxon to testify at New York City AI hearing, Bloomberg News reports
           </h1>
           <div class="article_WYSIWYG__O0uhw article_articlePage__UMz3q text-[18px] leading-8">
-            <p>Oct 4 (Reuters) - Former Anthropic researcher Jacob Coxon will testify at a New York City hearing
-            on artificial intelligence, Bloomberg News reported on Sunday, citing people familiar with the matter.</p>
+            <p>Oct 4 (Reuters) - Former <span class="aqPopupWrapper js-hover-me-wrapper"><a
+            href="/equities/anthropic" class="aqlink js-hover-me">Anthropic</a></span> researcher Jacob Coxon will
+            testify at a New York City hearing on artificial intelligence, Bloomberg News reported on Sunday, citing
+            people familiar with the matter.</p>
             <p>Coxon will appear at the request of New York City Council Speaker Julie Menin, who has urged AI
             whistleblowers to testify as city lawmakers weigh a package of bills aimed at establishing safeguards
             around the technology, the report said.</p>
             <p>Coxon quit Anthropic last month, issuing warnings that the "people building AI earnestly believe that
-            it could kill us all by the end of the decade" and accusing his former employer and OpenAI of
-            "gambling with our lives."</p>
+            it could kill us all by the end of the decade" and accusing his former employer and <span
+            class="aqPopupWrapper js-hover-me-wrapper"><a href="/equities/openai" class="aqlink js-hover-me">OpenAI</a></span>
+            of "gambling with our lives."</p>
             <p>Reuters could not immediately verify the report.</p>
           </div>
         </div>
